@@ -28,10 +28,10 @@ def add_tags(frame, size, position, tags, tag_position=None, alpha=0.75, color=(
             - If it doesn't fit, try to put the text On top of the rectangle
     '''
     if not tag_position:
-        fits_right = x2 + text_width + margin*3 < f_width
-        fits_left = x1 - (text_width + margin*3) > 0
-        fits_below = y2 + text_height - margin  < f_height
-        fits_inside = x1 + text_width + margin*3 < x2 - thickness and y1 + (margin*2 + text_height)*len(tags) + text_height - margin
+        fits_right = x2 + text_width + margin*3 <= f_width
+        fits_left = x1 - (text_width + margin*3) >= 0
+        fits_below = (text_height + margin)*len(tags) - margin <= y2 - thickness
+        fits_inside = x1 + text_width + margin*3 <= x2 - thickness and y1 + (margin*2 + text_height)*len(tags) + text_height - margin <= y2 - thickness
 
         if fits_right and fits_below:
             tag_position = 'bottom_right'
@@ -74,31 +74,33 @@ def add_peephole(frame, position, alpha=0.95, color=(110,70,45), thickness=2, li
     x1, y1, x2, y2 = position
     # Min value of thickness = 2
     thickness = min(thickness,2)
-    # Draw horizontal lines of the corners
-    cv2.line(frame,(x1, y1),(x1 + line_length, y1), color, thickness+1)
-    cv2.line(frame,(x2, y1),(x2 - line_length, y1), color, thickness+1)
-    cv2.line(frame,(x1, y2),(x1 + line_length, y2), color, thickness+1)
-    cv2.line(frame,(x2, y2),(x2 - line_length, y2), color, thickness+1)
-    # Draw vertical lines of the corners
-    cv2.line(frame,(x1, y1),(x1, y1 + line_length), color, thickness+1)
-    cv2.line(frame,(x1, y2),(x1, y2 - line_length), color, thickness+1)
-    cv2.line(frame,(x2, y1),(x2, y1 + line_length), color, thickness+1)
-    cv2.line(frame,(x2, y2),(x2, y2 - line_length), color, thickness+1)
-    # Added extra lines that gives the peephole effect
-    cv2.line(frame,(x1, int((y1 + y2) / 2)),(x1 + line_length, int((y1 + y2) / 2)), color, thickness-1)
-    cv2.line(frame,(x2, int((y1 + y2) / 2)),(x2 - line_length, int((y1 + y2) / 2)), color, thickness-1)
-    cv2.line(frame,(int((x1 + x2) / 2), y1),(int((x1 + x2) / 2), y1 + line_length), color, thickness-1)
-    cv2.line(frame,(int((x1 + x2) / 2), y2),(int((x1 + x2) / 2), y2 - line_length), color, thickness-1)
+    # If the selected zone is too small don't draw
+    if x2 - x1 > thickness*2 + line_length  and y2 - y1 > thickness*2 + line_length:
+        # Draw horizontal lines of the corners
+        cv2.line(frame,(x1, y1),(x1 + line_length, y1), color, thickness+1)
+        cv2.line(frame,(x2, y1),(x2 - line_length, y1), color, thickness+1)
+        cv2.line(frame,(x1, y2),(x1 + line_length, y2), color, thickness+1)
+        cv2.line(frame,(x2, y2),(x2 - line_length, y2), color, thickness+1)
+        # Draw vertical lines of the corners
+        cv2.line(frame,(x1, y1),(x1, y1 + line_length), color, thickness+1)
+        cv2.line(frame,(x1, y2),(x1, y2 - line_length), color, thickness+1)
+        cv2.line(frame,(x2, y1),(x2, y1 + line_length), color, thickness+1)
+        cv2.line(frame,(x2, y2),(x2, y2 - line_length), color, thickness+1)
+        # Added extra lines that gives the peephole effect
+        cv2.line(frame,(x1, int((y1 + y2) / 2)),(x1 + line_length, int((y1 + y2) / 2)), color, thickness-1)
+        cv2.line(frame,(x2, int((y1 + y2) / 2)),(x2 - line_length, int((y1 + y2) / 2)), color, thickness-1)
+        cv2.line(frame,(int((x1 + x2) / 2), y1),(int((x1 + x2) / 2), y1 + line_length), color, thickness-1)
+        cv2.line(frame,(int((x1 + x2) / 2), y2),(int((x1 + x2) / 2), y2 - line_length), color, thickness-1)
     return frame
 
 def select_zone(frame, size, position, tags, tag_position=None, alpha=0.9, color=(110,70,45), thickness=2, peephole=True):
     f_width, f_height = size
     x1, y1, x2, y2 = position
     # Auto adjust the limits of the selected zone
-    x1 = int(min(max(x1, thickness), f_width - thickness*2))
     x2 = int(min(max(x2, thickness*2), f_width - thickness))
-    y1 = int(min(max(y1, thickness), f_height - thickness*2))
     y2 = int(min(max(y2, thickness*2), f_height - thickness))
+    x1 = int(min(max(x1, thickness), x2 - thickness))
+    y1 = int(min(max(y1, thickness), y2 - thickness))
     position = (x1, y1, x2, y2)
 
     overlay = frame.copy()
@@ -118,7 +120,7 @@ if __name__ == '__main__':
         ret, frame = cap.read()
         if ret:
             keystroke = cv2.waitKey(1)
-            frame = select_zone(frame, (f_width, f_height), (225,100,425,400), ['Fer', 'Hombre', 'Joven'], tag_position='inside', color=(130,58,14))
+            frame = select_zone(frame, (f_width, f_height), (225,100,425,400), ['Fer', 'Hombre', 'Joven'], color=(130,58,14))
             cv2.imshow("Webcam", frame)
             # True if escape 'esc' is pressed
             if keystroke == 27:
