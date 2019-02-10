@@ -9,7 +9,6 @@ def get_lighter_color(color):
 def add_tags(frame, size, position, tags, alpha=0.75, color=(20, 20, 20), inside=False, margin=5, font_info=(cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.75, (255,255,255), 1)):
     f_width, f_height = size
     font, font_scale, font_color, thickness = font_info
-
     x1, y1, _, _ = position
 
     text_width = -1
@@ -21,6 +20,14 @@ def add_tags(frame, size, position, tags, alpha=0.75, color=(20, 20, 20), inside
         text_height = max(text_height, size[0][1])
         line_height = max(line_height, text_height + size[1] + margin)
 
+    # TODO: Change priority positions
+    '''
+        If not tags position are provided:
+            - First try to put the text on the Bottom Rigth corner
+            - If it doesn't fit, try to put the text Bottom Left corner
+            - If it doesn't fit, try to put the text Inside the rectangle
+            - If it doesn't fit, try to put the text On top of the rectangle
+    '''
     # If we dont have enought space or we want to put the text inside
     inside = inside or y1 - (margin*2 + text_height)*len(tags) - text_height - margin <= 0
     overlay = frame.copy()
@@ -42,30 +49,28 @@ def add_tags(frame, size, position, tags, alpha=0.75, color=(20, 20, 20), inside
 
 def add_peephole(frame, position, alpha=0.95, color=(110,70,45), thickness=2, line_length = 7):
     x1, y1, x2, y2 = position
-
+    # Min value of thickness = 2
     thickness = min(thickness,2)
-
+    # Draw horizontal lines of the corners
     cv2.line(frame,(x1, y1),(x1 + line_length, y1), color, thickness+1)
     cv2.line(frame,(x2, y1),(x2 - line_length, y1), color, thickness+1)
     cv2.line(frame,(x1, y2),(x1 + line_length, y2), color, thickness+1)
     cv2.line(frame,(x2, y2),(x2 - line_length, y2), color, thickness+1)
-
+    # Draw vertical lines of the corners
     cv2.line(frame,(x1, y1),(x1, y1 + line_length), color, thickness+1)
     cv2.line(frame,(x1, y2),(x1, y2 - line_length), color, thickness+1)
     cv2.line(frame,(x2, y1),(x2, y1 + line_length), color, thickness+1)
     cv2.line(frame,(x2, y2),(x2, y2 - line_length), color, thickness+1)
-
+    # Added extra lines that gives the peephole effect
     cv2.line(frame,(x1, int((y1 + y2) / 2)),(x1 + line_length, int((y1 + y2) / 2)), color, thickness-1)
     cv2.line(frame,(x2, int((y1 + y2) / 2)),(x2 - line_length, int((y1 + y2) / 2)), color, thickness-1)
     cv2.line(frame,(int((x1 + x2) / 2), y1),(int((x1 + x2) / 2), y1 + line_length), color, thickness-1)
     cv2.line(frame,(int((x1 + x2) / 2), y2),(int((x1 + x2) / 2), y2 - line_length), color, thickness-1)
-
     return frame
 
 def select_zone(frame, size, position, tags, alpha=0.9, color=(110,70,45), thickness=2, peephole=True):
     f_width, f_height = size
     x1, y1, x2, y2 = position
-    line_length = 10
 
     overlay = frame.copy()
     if peephole:
