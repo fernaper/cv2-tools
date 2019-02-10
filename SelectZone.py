@@ -20,17 +20,13 @@ def add_tags(frame, size, position, tags, tag_position=None, alpha=0.75, color=(
         text_height = max(text_height, size[0][1])
         line_height = max(line_height, text_height + size[1] + margin)
 
-    # TODO: Change priority positions
     '''
         If not tags position are provided:
             - First try to put the text on the Bottom Rigth corner
-            - If it doesn't fit, try to put the text Bottom Left corner
+            - If it doesn't fit, try to put the text on the Bottom Left corner
             - If it doesn't fit, try to put the text Inside the rectangle
             - If it doesn't fit, try to put the text On top of the rectangle
     '''
-    # If we dont have enought space or we want to put the text inside
-    inside = inside or y1 - (margin*2 + text_height)*len(tags) - text_height - margin <= 0
-
     if not tag_position:
         fits_right = x2 + text_width + margin*3 < f_width
         fits_left = x1 - (text_width + margin*3) > 0
