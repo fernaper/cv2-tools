@@ -6,10 +6,10 @@ def get_lighter_color(color):
     add = min(add,30)
     return (color[0] + add, color[1] + add, color[2] + add)
 
-def add_tags(frame, size, position, tags, alpha=0.75, color=(20, 20, 20), inside=False, margin=5, font_info=(cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.75, (255,255,255), 1)):
+def add_tags(frame, size, position, tags, tag_position=None, alpha=0.75, color=(20, 20, 20), inside=False, margin=5, font_info=(cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.75, (255,255,255), 1)):
     f_width, f_height = size
     font, font_scale, font_color, thickness = font_info
-    x1, y1, _, _ = position
+    x1, y1, x2, y2 = position
 
     text_width = -1
     text_height = -1
@@ -30,18 +30,45 @@ def add_tags(frame, size, position, tags, alpha=0.75, color=(20, 20, 20), inside
     '''
     # If we dont have enought space or we want to put the text inside
     inside = inside or y1 - (margin*2 + text_height)*len(tags) - text_height - margin <= 0
+
+    if not tag_position:
+        fits_right = x2 + text_width + margin*3 < f_width
+        fits_left = x1 - (text_width + margin*3) > 0
+        fits_below = y2 + text_height - margin  < f_height
+        fits_inside = x1 + text_width + margin*3 < x2 - thickness and y1 + (margin*2 + text_height)*len(tags) + text_height - margin
+
+        if fits_right and fits_below:
+            tag_position = 'bottom_right'
+        elif fits_left and fits_below:
+            tag_position = 'bottom_left'
+        elif fits_inside:
+            tag_position = 'inside'
+        else:
+            tag_position = 'top'
+    else:
+        valid = ['bottom_right', 'bottom_left', 'inside', 'top']
+        if tag_position not in ['bottom_right', 'bottom_left', 'inside', 'top']:
+            raise ValueError('Error, invalid tag_position ({}) must be in: {}'.format(tag_position, valid))
+
     overlay = frame.copy()
     text_overlay = frame.copy()
 
     for i, tag in enumerate(tags):
         reverse_i = len(tags) - i
-        if inside:
-            cv2.rectangle(overlay, (x1 + margin, y1 + (margin*2 + text_height)*(i+1) - text_height - margin), (x1 + text_width + margin*3, y1 + (margin*2 + text_height)*(i+1) + text_height - margin), color,-1)
-            cv2.putText(text_overlay, tag, (x1 + margin*2, y1 + (margin*2 + text_height)*(i+1)), font, font_scale, font_color, thickness)
-        else:
+        if tag_position == 'top':
             cv2.rectangle(overlay, (x1 + margin, y1 - (margin*2 + text_height)*reverse_i - text_height - margin), (x1 + text_width + margin*3, y1 - (margin*2 + text_height)*reverse_i + text_height - margin), color,-1)
             cv2.putText(text_overlay, tag, (x1 + margin*2, y1 - (margin*2 + text_height)*reverse_i), font, font_scale, font_color, thickness)
+        elif tag_position == 'inside':
+            cv2.rectangle(overlay, (x1 + margin, y1 + (margin*2 + text_height)*(i+1) - text_height - margin), (x1 + text_width + margin*3, y1 + (margin*2 + text_height)*(i+1) + text_height - margin), color,-1)
+            cv2.putText(text_overlay, tag, (x1 + margin*2, y1 + (margin*2 + text_height)*(i+1)), font, font_scale, font_color, thickness)
+        elif tag_position == 'bottom_left':
+            cv2.rectangle(overlay, (x1 - (text_width + margin*3), y2 - (margin*2 + text_height)*reverse_i - text_height - margin), (x1 - margin, y2 - (margin*2 + text_height)*reverse_i + text_height - margin), color,-1)
+            cv2.putText(text_overlay, tag, (x1 - (text_width + margin*2), y2 - (margin*2 + text_height)*reverse_i), font, font_scale, font_color, thickness)
+        elif tag_position == 'bottom_right':
+            cv2.rectangle(overlay, (x2 + margin, y2 - (margin*2 + text_height)*reverse_i - text_height - margin), (x2 + text_width + margin*3, y2 - (margin*2 + text_height)*reverse_i + text_height - margin), color,-1)
+            cv2.putText(text_overlay, tag, (x2 + margin*2, y2 - (margin*2 + text_height)*reverse_i), font, font_scale, font_color, thickness)
         y1 += margin
+        y2 += margin
     cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
     cv2.addWeighted(text_overlay, alpha, frame, 1, 0, frame)
 
@@ -68,9 +95,15 @@ def add_peephole(frame, position, alpha=0.95, color=(110,70,45), thickness=2, li
     cv2.line(frame,(int((x1 + x2) / 2), y2),(int((x1 + x2) / 2), y2 - line_length), color, thickness-1)
     return frame
 
-def select_zone(frame, size, position, tags, alpha=0.9, color=(110,70,45), thickness=2, peephole=True):
+def select_zone(frame, size, position, tags, tag_position=None, alpha=0.9, color=(110,70,45), thickness=2, peephole=True):
     f_width, f_height = size
     x1, y1, x2, y2 = position
+    # Auto adjust the limits of the selected zone
+    x1 = int(min(max(x1, thickness), f_width - thickness*2))
+    x2 = int(min(max(x2, thickness*2), f_width - thickness))
+    y1 = int(min(max(y1, thickness), f_height - thickness*2))
+    y2 = int(min(max(y2, thickness*2), f_height - thickness))
+    position = (x1, y1, x2, y2)
 
     overlay = frame.copy()
     if peephole:
@@ -78,7 +111,7 @@ def select_zone(frame, size, position, tags, alpha=0.9, color=(110,70,45), thick
     cv2.rectangle(overlay, (x1, y1), (x2, y2), color,2)
 
     cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
-    frame = add_tags(frame, size, position, tags)
+    frame = add_tags(frame, size, position, tags, tag_position=tag_position)
     return frame
 
 if __name__ == '__main__':
@@ -89,7 +122,7 @@ if __name__ == '__main__':
         ret, frame = cap.read()
         if ret:
             keystroke = cv2.waitKey(1)
-            frame = select_zone(frame, (f_width, f_height), (225,100,425,400), ['Fer', 'Hombre', 'Joven'], color=(130,58,14))
+            frame = select_zone(frame, (f_width, f_height), (225,100,425,400), ['Fer', 'Hombre', 'Joven'], tag_position='inside', color=(130,58,14))
             cv2.imshow("Webcam", frame)
             # True if escape 'esc' is pressed
             if keystroke == 27:
