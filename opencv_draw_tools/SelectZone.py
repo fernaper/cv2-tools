@@ -120,7 +120,7 @@ if __name__ == '__main__':
         ret, frame = cap.read()
         if ret:
             keystroke = cv2.waitKey(1)
-            frame = select_zone(frame, (f_width, f_height), (225,100,425,400), ['Fer', 'Hombre', 'Joven'], color=(130,58,14))
+            frame = select_zone(frame, (f_width, f_height), (225,100,425,400), ['Programmer', 'Example', 'Core'], color=(130,58,14))
             cv2.imshow("Webcam", frame)
             # True if escape 'esc' is pressed
             if keystroke == 27:
