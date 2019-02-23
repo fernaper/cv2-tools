@@ -1,5 +1,11 @@
+# MIT License
+# Copyright (c) 2019 Fernando Perez
 import numpy as np
+import sys
 import cv2
+
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
 
 def get_lighter_color(color):
     add = 255 - max(color)
@@ -98,24 +104,39 @@ def add_peephole(frame, position, alpha=0.5, color=(110,70,45), thickness=2, lin
         cv2.line(overlay,(x2, int((y1 + y2) / 2)),(x2 - line_length, int((y1 + y2) / 2)), color, thickness-1)
         cv2.line(overlay,(int((x1 + x2) / 2), y1),(int((x1 + x2) / 2), y1 + line_length), color, thickness-1)
         cv2.line(overlay,(int((x1 + x2) / 2), y2),(int((x1 + x2) / 2), y2 - line_length), color, thickness-1)
-    cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
+        cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
     return frame
 
-def select_zone(frame, position, tags, tag_position=None, alpha=0.9, color=(110,70,45), normalized=False, thickness=2, peephole=True):
-    f_height, f_width = frame.shape[:2]
+def adjust_position(shape, position, normalized=False, thickness=0):
+    f_height, f_width = shape
     x1, y1, x2, y2 = position
     if normalized:
         x1 *= f_width
         x2 *= f_width
         y1 *= f_height
         y2 *= f_height
+
+    if x1 < 0 or x1 > f_width:
+        eprint('Warning: x1 = {}; Value should be between {} and {}'.format(x1, 0, f_width))
+        x1 = min(max(x1,0),f_width)
+    if x2 < 0 or x2 > f_width:
+        eprint('Warning: x2 = {}; Value should be between {} and {}'.format(x2, 0, f_width))
+        x2 = min(max(x2,0),f_width)
+    if y1 < 0 or y1 > f_height:
+        eprint('Warning: y1 = {}; Value should be between {} and {}'.format(y1, 0, f_height))
+        y1 = min(max(y1,0),f_height)
+    if y2 < 0 or y2 > f_height:
+        eprint('Warning: y2 = {}; Value should be between {} and {}'.format(y2, 0, f_height))
+        y2 = min(max(y2,0),f_height)
     # Auto adjust the limits of the selected zone
     x2 = int(min(max(x2, thickness*2), f_width - thickness))
     y2 = int(min(max(y2, thickness*2), f_height - thickness))
     x1 = int(min(max(x1, thickness), x2 - thickness))
     y1 = int(min(max(y1, thickness), y2 - thickness))
-    position = (x1, y1, x2, y2)
+    return (x1, y1, x2, y2)
 
+def select_zone(frame, position, tags, tag_position=None, alpha=0.9, color=(110,70,45), normalized=False, thickness=2, peephole=True):
+    x1, y1, x2, y2 = position = adjust_position(frame.shape[:2], position, normalized=normalized, thickness=thickness)
     if peephole:
         frame = add_peephole(frame, position, alpha=alpha, color=color)
     overlay = frame.copy()
