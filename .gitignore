@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Notes for the creator
+*.step
+
 # C extensions
 *.so
 
