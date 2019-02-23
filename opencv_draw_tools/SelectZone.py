@@ -158,7 +158,7 @@ def select_zone(frame, position, tags, tag_position=None, alpha=0.9, color=(110,
     frame = add_tags(frame, position, tags, tag_position=tag_position)
     return frame
 
-if __name__ == '__main__':
+def webcam_test():
     cap = cv2.VideoCapture(0)
     f_width = cap.get(3)
     f_height = cap.get(4)
@@ -168,10 +168,13 @@ if __name__ == '__main__':
         frame = cv2.flip(frame, 1)
         if ret:
             keystroke = cv2.waitKey(1)
-            frame = select_zone(frame, (0.33,0.2,0.66,0.8), ['Programmer', 'Example', 'Core'], color=(130,58,14), normalized=True)
+            frame = select_zone(frame, (0.33,0.2,0.66,0.8), ['Programmer', 'Fernando', 'Perez'], color=(130,58,14), normalized=True)
             cv2.imshow(window_name, frame)
             # True if escape 'esc' is pressed
             if keystroke == 27:
                 break
     cv2.destroyAllWindows()
     cv2.VideoCapture(0).release()
+
+if __name__ == '__main__':
+    webcam_test()
