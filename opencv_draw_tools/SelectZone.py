@@ -4,6 +4,8 @@ import numpy as np
 import sys
 import cv2
 
+IGNORE_ERRORS = False
+
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
@@ -50,7 +52,10 @@ def add_tags(frame, position, tags, tag_position=None, alpha=0.75, color=(20, 20
     else:
         valid = ['bottom_right', 'bottom_left', 'inside', 'top']
         if tag_position not in ['bottom_right', 'bottom_left', 'inside', 'top']:
-            raise ValueError('Error, invalid tag_position ({}) must be in: {}'.format(tag_position, valid))
+            if not IGNORE_ERRORS:
+                raise ValueError('Error, invalid tag_position ({}) must be in: {}'.format(tag_position, valid))
+            else:
+                tag_position = 'bottom_right'
 
     overlay = frame.copy()
     for i, tag in enumerate(tags):
@@ -117,17 +122,25 @@ def adjust_position(shape, position, normalized=False, thickness=0):
         y2 *= f_height
 
     if x1 < 0 or x1 > f_width:
-        eprint('Warning: x1 = {}; Value should be between {} and {}'.format(x1, 0, f_width))
-        x1 = min(max(x1,0),f_width)
+        if not IGNORE_ERRORS:
+            raise ValueError('Error: x1 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(x1, 0, f_width))
+        else:
+            x1 = min(max(x1,0),f_width)
     if x2 < 0 or x2 > f_width:
-        eprint('Warning: x2 = {}; Value should be between {} and {}'.format(x2, 0, f_width))
-        x2 = min(max(x2,0),f_width)
+        if not IGNORE_ERRORS:
+            raise ValueError('Error: x2 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(x2, 0, f_width))
+        else:
+            x2 = min(max(x2,0),f_width)
     if y1 < 0 or y1 > f_height:
-        eprint('Warning: y1 = {}; Value should be between {} and {}'.format(y1, 0, f_height))
-        y1 = min(max(y1,0),f_height)
+        if not IGNORE_ERRORS:
+            raise ValueError('Error: y1 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(y1, 0, f_height))
+        else:
+            y1 = min(max(y1,0),f_height)
     if y2 < 0 or y2 > f_height:
-        eprint('Warning: y2 = {}; Value should be between {} and {}'.format(y2, 0, f_height))
-        y2 = min(max(y2,0),f_height)
+        if not IGNORE_ERRORS:
+            raise ValueError('Error: y2 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(y2, 0, f_height))
+        else:
+            y2 = min(max(y2,0),f_height)
     # Auto adjust the limits of the selected zone
     x2 = int(min(max(x2, thickness*2), f_width - thickness))
     y2 = int(min(max(y2, thickness*2), f_height - thickness))
@@ -149,13 +162,14 @@ if __name__ == '__main__':
     cap = cv2.VideoCapture(0)
     f_width = cap.get(3)
     f_height = cap.get(4)
+    window_name = 'Webcam'
     while True:
         ret, frame = cap.read()
         frame = cv2.flip(frame, 1)
         if ret:
             keystroke = cv2.waitKey(1)
             frame = select_zone(frame, (0.33,0.2,0.66,0.8), ['Programmer', 'Example', 'Core'], color=(130,58,14), normalized=True)
-            cv2.imshow("Webcam", frame)
+            cv2.imshow(window_name, frame)
             # True if escape 'esc' is pressed
             if keystroke == 27:
                 break
