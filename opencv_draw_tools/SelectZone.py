@@ -159,6 +159,7 @@ def select_zone(frame, position, tags, tag_position=None, alpha=0.9, color=(110,
     return frame
 
 def webcam_test():
+    print('Launching webcam test')
     cap = cv2.VideoCapture(0)
     f_width = cap.get(3)
     f_height = cap.get(4)

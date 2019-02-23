@@ -24,6 +24,6 @@ When you install `opencv-draw-tools`, it will automatically download `numpy` but
 ```
 import opencv_draw_tools as cv2_tools
 
-print('Name: {}\nVersion:{}\nHelp:{}'.format(cv2_tools.name,cv2_tools.version,cv2_tools.help))
+print('Name: {}\nVersion:{}\nHelp:{}'.format(cv2_tools.name,cv2_tools.__version__,cv2_tools.help))
 cv2_tools.webcam_test()
 ```
