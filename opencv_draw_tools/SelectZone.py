@@ -1,13 +1,21 @@
+# MIT License
+# Copyright (c) 2019 Fernando Perez
 import numpy as np
+import sys
 import cv2
+
+IGNORE_ERRORS = False
+
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
 
 def get_lighter_color(color):
     add = 255 - max(color)
     add = min(add,30)
     return (color[0] + add, color[1] + add, color[2] + add)
 
-def add_tags(frame, size, position, tags, tag_position=None, alpha=0.65, color=(20, 20, 20), inside=False, margin=5, font_info=(cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.75, (255,255,255), 1)):
-    f_width, f_height = size
+def add_tags(frame, position, tags, tag_position=None, alpha=0.75, color=(20, 20, 20), inside=False, margin=5, font_info=(cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.75, (255,255,255), 1)):
+    f_height, f_width = frame.shape[:2]
     font, font_scale, font_color, thickness = font_info
     x1, y1, x2, y2 = position
 
@@ -44,7 +52,10 @@ def add_tags(frame, size, position, tags, tag_position=None, alpha=0.65, color=(
     else:
         valid = ['bottom_right', 'bottom_left', 'inside', 'top']
         if tag_position not in ['bottom_right', 'bottom_left', 'inside', 'top']:
-            raise ValueError('Error, invalid tag_position ({}) must be in: {}'.format(tag_position, valid))
+            if not IGNORE_ERRORS:
+                raise ValueError('Error, invalid tag_position ({}) must be in: {}'.format(tag_position, valid))
+            else:
+                tag_position = 'bottom_right'
 
     overlay = frame.copy()
     for i, tag in enumerate(tags):
@@ -98,38 +109,67 @@ def add_peephole(frame, position, alpha=0.5, color=(110,70,45), thickness=2, lin
         cv2.line(overlay,(x2, int((y1 + y2) / 2)),(x2 - line_length, int((y1 + y2) / 2)), color, thickness-1)
         cv2.line(overlay,(int((x1 + x2) / 2), y1),(int((x1 + x2) / 2), y1 + line_length), color, thickness-1)
         cv2.line(overlay,(int((x1 + x2) / 2), y2),(int((x1 + x2) / 2), y2 - line_length), color, thickness-1)
-    cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
+        cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
     return frame
 
-def select_zone(frame, size, position, tags, tag_position=None, alpha=0.75, color=(110,70,45), thickness=2, peephole=True):
-    f_width, f_height = size
+def adjust_position(shape, position, normalized=False, thickness=0):
+    f_height, f_width = shape
     x1, y1, x2, y2 = position
+    if normalized:
+        x1 *= f_width
+        x2 *= f_width
+        y1 *= f_height
+        y2 *= f_height
+
+    if x1 < 0 or x1 > f_width:
+        if not IGNORE_ERRORS:
+            raise ValueError('Error: x1 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(x1, 0, f_width))
+        else:
+            x1 = min(max(x1,0),f_width)
+    if x2 < 0 or x2 > f_width:
+        if not IGNORE_ERRORS:
+            raise ValueError('Error: x2 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(x2, 0, f_width))
+        else:
+            x2 = min(max(x2,0),f_width)
+    if y1 < 0 or y1 > f_height:
+        if not IGNORE_ERRORS:
+            raise ValueError('Error: y1 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(y1, 0, f_height))
+        else:
+            y1 = min(max(y1,0),f_height)
+    if y2 < 0 or y2 > f_height:
+        if not IGNORE_ERRORS:
+            raise ValueError('Error: y2 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(y2, 0, f_height))
+        else:
+            y2 = min(max(y2,0),f_height)
     # Auto adjust the limits of the selected zone
     x2 = int(min(max(x2, thickness*2), f_width - thickness))
     y2 = int(min(max(y2, thickness*2), f_height - thickness))
     x1 = int(min(max(x1, thickness), x2 - thickness))
     y1 = int(min(max(y1, thickness), y2 - thickness))
-    position = (x1, y1, x2, y2)
+    return (x1, y1, x2, y2)
 
+def select_zone(frame, position, tags, tag_position=None, alpha=0.9, color=(110,70,45), normalized=False, thickness=2, peephole=True):
+    x1, y1, x2, y2 = position = adjust_position(frame.shape[:2], position, normalized=normalized, thickness=thickness)
     if peephole:
         frame = add_peephole(frame, position, alpha=alpha, color=color)
     overlay = frame.copy()
     cv2.rectangle(overlay, (x1, y1), (x2, y2), color,2)
     cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
-    frame = add_tags(frame, size, position, tags, tag_position=tag_position)
+    frame = add_tags(frame, position, tags, tag_position=tag_position)
     return frame
 
 if __name__ == '__main__':
     cap = cv2.VideoCapture(0)
     f_width = cap.get(3)
     f_height = cap.get(4)
+    window_name = 'Webcam'
     while True:
         ret, frame = cap.read()
         frame = cv2.flip(frame, 1)
         if ret:
             keystroke = cv2.waitKey(1)
-            frame = select_zone(frame, (f_width, f_height), (225,100,425,400), ['Programmer', 'Example', 'Core'], color=(130,58,14))
-            cv2.imshow("Webcam", frame)
+            frame = select_zone(frame, (0.33,0.2,0.66,0.8), ['Programmer', 'Example', 'Core'], color=(130,58,14), normalized=True)
+            cv2.imshow(window_name, frame)
             # True if escape 'esc' is pressed
             if keystroke == 27:
                 break
