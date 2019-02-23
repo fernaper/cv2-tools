@@ -6,8 +6,8 @@ def get_lighter_color(color):
     add = min(add,30)
     return (color[0] + add, color[1] + add, color[2] + add)
 
-def add_tags(frame, size, position, tags, tag_position=None, alpha=0.75, color=(20, 20, 20), inside=False, margin=5, font_info=(cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.75, (255,255,255), 1)):
-    f_width, f_height = size
+def add_tags(frame, position, tags, tag_position=None, alpha=0.75, color=(20, 20, 20), inside=False, margin=5, font_info=(cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.75, (255,255,255), 1)):
+    f_height, f_width = frame.shape[:2]
     font, font_scale, font_color, thickness = font_info
     x1, y1, x2, y2 = position
 
@@ -93,9 +93,14 @@ def add_peephole(frame, position, alpha=0.95, color=(110,70,45), thickness=2, li
         cv2.line(frame,(int((x1 + x2) / 2), y2),(int((x1 + x2) / 2), y2 - line_length), color, thickness-1)
     return frame
 
-def select_zone(frame, size, position, tags, tag_position=None, alpha=0.9, color=(110,70,45), thickness=2, peephole=True):
-    f_width, f_height = size
+def select_zone(frame, position, tags, tag_position=None, alpha=0.9, color=(110,70,45), normalized=False, thickness=2, peephole=True):
+    f_height, f_width = frame.shape[:2]
     x1, y1, x2, y2 = position
+    if normalized:
+        x1 *= f_width
+        x2 *= f_width
+        y1 *= f_height
+        y2 *= f_height
     # Auto adjust the limits of the selected zone
     x2 = int(min(max(x2, thickness*2), f_width - thickness))
     y2 = int(min(max(y2, thickness*2), f_height - thickness))
@@ -109,7 +114,7 @@ def select_zone(frame, size, position, tags, tag_position=None, alpha=0.9, color
     cv2.rectangle(overlay, (x1, y1), (x2, y2), color,2)
 
     cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
-    frame = add_tags(frame, size, position, tags, tag_position=tag_position)
+    frame = add_tags(frame, position, tags, tag_position=tag_position)
     return frame
 
 if __name__ == '__main__':
@@ -120,7 +125,7 @@ if __name__ == '__main__':
         ret, frame = cap.read()
         if ret:
             keystroke = cv2.waitKey(1)
-            frame = select_zone(frame, (f_width, f_height), (225,100,425,400), ['Programmer', 'Example', 'Core'], color=(130,58,14))
+            frame = select_zone(frame, (0.33,0.2,0.66,0.8), ['Programmer', 'Example', 'Core'], color=(130,58,14), normalized=True)
             cv2.imshow("Webcam", frame)
             # True if escape 'esc' is pressed
             if keystroke == 27:
