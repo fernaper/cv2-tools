@@ -31,8 +31,9 @@ def get_lighter_color(color):
 
 def add_tags(frame, position, tags, tag_position=None, alpha=0.75, color=(20, 20, 20), margin=5, font_info=(cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.75, (255,255,255), 1)):
     """Add tags to selected zone.
-       It was originally intended as an auxiliary method to add details to the select_zone()
-       method, however it can be used completely independently.
+
+    It was originally intended as an auxiliary method to add details to the select_zone()
+    method, however it can be used completely independently.
 
     Keyword arguments:
     frame -- opencv frame object where you want to draw
@@ -140,8 +141,9 @@ def add_tags(frame, position, tags, tag_position=None, alpha=0.75, color=(20, 20
 
 def add_peephole(frame, position, alpha=0.5, color=(110,70,45), thickness=2, line_length=7, corners=True):
     """Add peephole effect to the select_zone.
-       It was originally intended as an auxiliary method to add details to the select_zone()
-       method, however it can be used completely independently.
+
+    It was originally intended as an auxiliary method to add details to the select_zone()
+    method, however it can be used completely independently.
 
     Keyword arguments:
     frame -- opencv frame object where you want to draw
@@ -319,7 +321,7 @@ def get_complete_help():
     * webcam_test:
     {}
 
-    '''.format('', '', help, select_zone.__doc__, add_peephole.__doc__,
+    '''.format(select_zone.__doc__, add_peephole.__doc__,
                add_tags.__doc__, get_lighter_color.__doc__, adjust_position.__doc__,
                webcam_test.__doc__)
 
