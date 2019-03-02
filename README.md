@@ -42,23 +42,21 @@ import opencv_draw_tools as cv2_tools
   position -- touple with 4 elements (x1, y1, x2, y2)
               This elements must be between 0 and 1 in case it is normalized
               or between 0 and frame height/width.
-  tags -- list of strings/tags you want to associate to the selected zone (default: [])
-  tag_position -- position where you want to add the tags, relatively to the selected zone (default: None)
+  tags -- list of strings/tags you want to associate to the selected zone (default [])
+  tag_position -- position where you want to add the tags, relatively to the selected zone (default None)
                   If None provided it will auto select the zone where it fits better:
                       - First try to put the text on the Bottom Rigth corner
                       - If it doesn't fit, try to put the text on the Bottom Left corner
                       - If it doesn't fit, try to put the text Inside the rectangle
                       - Finally if it doesn't fit, try to put the text On top of the rectangle
-  alpha -- transparency of the selected zone on the image (default: 0.9)
+  alpha -- transparency of the selected zone on the image (default 0.9)
            1 means totally visible and 0 totally invisible
-  color -- color of the selected zone, touple with 3 elements BGR (default: (110,70,45) -> dark blue)
+  color -- color of the selected zone, touple with 3 elements BGR (default (110,70,45) -> dark blue)
            BGR = Blue - Green - Red
-  normalized -- boolean parameter, if True, position passed normalized (between 0 and 1) else passed
-                concrete values (default: False)
-  thickness -- thickness of the drawing in pixels (default: 2)
+  normalized -- boolean parameter, if True, position provided normalized (between 0 and 1) else you should provide concrete values (default False)
+  thickness -- thickness of the drawing in pixels (default 2)
+  filled -- boolean parameter, if True, will draw a filled rectangle with one-third opacity compared to the rectangle (default False)
   peephole -- boolean parameter, if True, also draw additional effect, so it looks like a peephole
-  Return:
-  A new drawed Frame
 """
 frame = cv2_tools.select_zone(frame, position, tags=[])
 ```
@@ -85,7 +83,7 @@ def webcam_test():
         frame = cv2.flip(frame, 1)
         if ret:
             keystroke = cv2.waitKey(1)
-            frame = select_zone(frame, (0.33,0.2,0.66,0.8), tags=['Tag 1', 'Tag 2', 'Tag 3'], normalized=True)
+            frame = select_zone(frame, (0.33,0.2,0.66,0.8), tags=['Tag 1', 'Tag 2', 'Tag 3\n  - Tag 3.1'], filled=True, normalized=True)
             cv2.imshow(window_name, frame)
             # True if escape 'esc' is pressed
             if keystroke == 27:
