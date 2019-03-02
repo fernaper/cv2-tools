@@ -1,6 +1,10 @@
 # opencv-draw-tools
 Library to help the drawing process with OpenCV. Thought to add labels to the images. Classification of images, etc.
 
+![image](https://user-images.githubusercontent.com/18369529/53686731-3dba0500-3d2b-11e9-95e5-e4517c013d14.png)
+
+**Image generated with Intel Openvino Toolkit and drawed with opencv-draw-tools v0.1.9**
+
 ## Installation
 
 ### Pre-requisites
