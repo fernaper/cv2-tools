@@ -31,8 +31,9 @@ def get_lighter_color(color):
 
 def add_tags(frame, position, tags, tag_position=None, alpha=0.75, color=(20, 20, 20), margin=5, font_info=(cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.75, (255,255,255), 1)):
     """Add tags to selected zone.
-       It was originally intended as an auxiliary method to add details to the select_zone()
-       method, however it can be used completely independently.
+
+    It was originally intended as an auxiliary method to add details to the select_zone()
+    method, however it can be used completely independently.
 
     Keyword arguments:
     frame -- opencv frame object where you want to draw
@@ -65,6 +66,14 @@ def add_tags(frame, position, tags, tag_position=None, alpha=0.75, color=(20, 20
     f_height, f_width = frame.shape[:2]
     font, font_scale, font_color, thickness = font_info
     x1, y1, x2, y2 = position
+
+    aux_tags = []
+    for tag in tags:
+        line = [x+'\n' for x in tag.split('\n')]
+        line[0] = line[0][:-1]
+        for element in line:
+            aux_tags.append(element)
+    tags = aux_tags
 
     text_width = -1
     text_height = -1
@@ -107,32 +116,34 @@ def add_tags(frame, position, tags, tag_position=None, alpha=0.75, color=(20, 20
     overlay = frame.copy()
     for i, tag in enumerate(tags):
         reverse_i = len(tags) - i
+        extra_adjustment = 2 if tag[-1] == '\n' else 1
         if tag_position == 'top':
-            cv2.rectangle(overlay, (x1 + margin, y1 - (margin*2 + text_height)*reverse_i - text_height - margin),
+            cv2.rectangle(overlay, (x1 + margin, y1 - (margin*2 + text_height)*reverse_i - text_height - margin * extra_adjustment),
                          (x1 + text_width + margin*3, y1 - (margin*2 + text_height)*reverse_i + text_height - margin), color,-1)
         elif tag_position == 'inside':
-            cv2.rectangle(overlay, (x1 + margin, y1 + (margin*2 + text_height)*(i+1) - text_height - margin),
+            cv2.rectangle(overlay, (x1 + margin, y1 + (margin*2 + text_height)*(i+1) - text_height - margin - extra_adjustment),
                          (x1 + text_width + margin*3, y1 + (margin*2 + text_height)*(i+1) + text_height - margin), color,-1)
         elif tag_position == 'bottom_left':
-            cv2.rectangle(overlay, (x1 - (text_width + margin*3), y2 - (margin*2 + text_height)*reverse_i - text_height - margin),
+            cv2.rectangle(overlay, (x1 - (text_width + margin*3), y2 - (margin*2 + text_height)*reverse_i - text_height - margin * extra_adjustment),
                          (x1 - margin, y2 - (margin*2 + text_height)*reverse_i + text_height - margin), color,-1)
         elif tag_position == 'bottom_right':
-            cv2.rectangle(overlay, (x2 + margin, y2 - (margin*2 + text_height)*reverse_i - text_height - margin),
-                         (x2 + text_width + margin*3, y2 - (margin*2 + text_height)*reverse_i + text_height - margin), color,-1)
+            cv2.rectangle(overlay, (x2 + margin, y2 - (margin*2 + text_height)*reverse_i - text_height - margin * extra_adjustment),
+                             (x2 + text_width + margin*3, y2 - (margin*2 + text_height)*reverse_i + text_height - margin), color,-1)
         y1 += margin
         y2 += margin
     cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
     x1, y1, x2, y2 = position
     for i, tag in enumerate(tags):
         reverse_i = len(tags) - i
+        extra_adjustment = int(margin*( 0.5 if tag[-1] == '\n' else 0))
         if tag_position == 'top':
-            cv2.putText(frame, tag, (x1 + margin*2, y1 - (margin*2 + text_height)*reverse_i), font, font_scale, font_color, thickness)
+            cv2.putText(frame, tag.replace('\n',''), (x1 + margin*2, y1 - (margin*2 + text_height)*reverse_i - extra_adjustment), font, font_scale, font_color, thickness)
         elif tag_position == 'inside':
-            cv2.putText(frame, tag, (x1 + margin*2, y1 + (margin*2 + text_height)*(i+1)), font, font_scale, font_color, thickness)
+            cv2.putText(frame, tag.replace('\n',''), (x1 + margin*2, y1 + (margin*2 + text_height)*(i+1) - extra_adjustment), font, font_scale, font_color, thickness)
         elif tag_position == 'bottom_left':
-            cv2.putText(frame, tag, (x1 - (text_width + margin*2), y2 - (margin*2 + text_height)*reverse_i), font, font_scale, font_color, thickness)
+            cv2.putText(frame, tag.replace('\n',''), (x1 - (text_width + margin*2), y2 - (margin*2 + text_height)*reverse_i - extra_adjustment), font, font_scale, font_color, thickness)
         elif tag_position == 'bottom_right':
-            cv2.putText(frame, tag, (x2 + margin*2, y2 - (margin*2 + text_height)*reverse_i), font, font_scale, font_color, thickness)
+            cv2.putText(frame, tag.replace('\n',''), (x2 + margin*2, y2 - (margin*2 + text_height)*reverse_i - extra_adjustment), font, font_scale, font_color, thickness)
         y1 += margin
         y2 += margin
 
@@ -140,8 +151,9 @@ def add_tags(frame, position, tags, tag_position=None, alpha=0.75, color=(20, 20
 
 def add_peephole(frame, position, alpha=0.5, color=(110,70,45), thickness=2, line_length=7, corners=True):
     """Add peephole effect to the select_zone.
-       It was originally intended as an auxiliary method to add details to the select_zone()
-       method, however it can be used completely independently.
+
+    It was originally intended as an auxiliary method to add details to the select_zone()
+    method, however it can be used completely independently.
 
     Keyword arguments:
     frame -- opencv frame object where you want to draw
@@ -153,7 +165,7 @@ def add_peephole(frame, position, alpha=0.5, color=(110,70,45), thickness=2, lin
              1 means totally visible and 0 totally invisible
     color -- color of the selected zone, touple with 3 elements BGR (default (110,70,45) -> dark blue)
              BGR = Blue - Green - Red
-    normalized -- boolean parameter, if True, position passed normalized (between 0 and 1) else passed concrete values (default False)
+    normalized -- boolean parameter, if True, position provided normalized (between 0 and 1) else you shold provide concrete values (default False)
     thickness -- thickness of the drawing in pixels (default 2)
     corners -- boolean parameter, if True, also draw the corners of the rectangle
 
@@ -187,7 +199,7 @@ def add_peephole(frame, position, alpha=0.5, color=(110,70,45), thickness=2, lin
     return frame
 
 def adjust_position(shape, position, normalized=False, thickness=0):
-    """Auxiliar Method: Adjust passed position to select_zone.
+    """Auxiliar Method: Adjust provided position to select_zone.
 
     Keyword arguments:
     shape -- touple with 2 elements (height, width)
@@ -195,7 +207,7 @@ def adjust_position(shape, position, normalized=False, thickness=0):
     position -- touple with 4 elements (x1, y1, x2, y2)
                 This elements must be between 0 and 1 in case it is normalized
                 or between 0 and frame height/width.
-    normalized -- boolean parameter, if True, position passed normalized (between 0 and 1) else passed concrete values (default False)
+    normalized -- boolean parameter, if True, position provided normalized (between 0 and 1) else you shold provide concrete values (default False)
     thickness -- thickness of the drawing in pixels (default 0)
 
     Return:
@@ -237,7 +249,7 @@ def adjust_position(shape, position, normalized=False, thickness=0):
     y1 = int(min(max(y1, thickness), y2 - thickness))
     return (x1, y1, x2, y2)
 
-def select_zone(frame, position, tags=[], tag_position=None, alpha=0.9, color=(110,70,45), normalized=False, thickness=2, peephole=True):
+def select_zone(frame, position, tags=[], tag_position=None, alpha=0.9, color=(110,70,45), normalized=False, thickness=2, filled=False, peephole=True):
     """Draw better rectangles to select zones.
 
     Keyword arguments:
@@ -256,8 +268,9 @@ def select_zone(frame, position, tags=[], tag_position=None, alpha=0.9, color=(1
              1 means totally visible and 0 totally invisible
     color -- color of the selected zone, touple with 3 elements BGR (default (110,70,45) -> dark blue)
              BGR = Blue - Green - Red
-    normalized -- boolean parameter, if True, position passed normalized (between 0 and 1) else passed concrete values (default False)
+    normalized -- boolean parameter, if True, position provided normalized (between 0 and 1) else you should provide concrete values (default False)
     thickness -- thickness of the drawing in pixels (default 2)
+    filled -- boolean parameter, if True, will draw a filled rectangle with one-third opacity compared to the rectangle (default False)
     peephole -- boolean parameter, if True, also draw additional effect, so it looks like a peephole
 
     Return:
@@ -267,9 +280,16 @@ def select_zone(frame, position, tags=[], tag_position=None, alpha=0.9, color=(1
     x1, y1, x2, y2 = position = adjust_position(frame.shape[:2], position, normalized=normalized, thickness=thickness)
     if peephole:
         frame = add_peephole(frame, position, alpha=alpha, color=color)
+
+    if filled:
+        overlay = frame.copy()
+        cv2.rectangle(overlay, (x1, y1), (x2, y2), color,thickness=cv2.FILLED)
+        cv2.addWeighted(overlay, alpha/3.0, frame, 1 - alpha/3.0, 0, frame)
+
     overlay = frame.copy()
-    cv2.rectangle(overlay, (x1, y1), (x2, y2), color,2)
+    cv2.rectangle(overlay, (x1, y1), (x2, y2), color,thickness=thickness)
     cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
+
     frame = add_tags(frame, position, tags, tag_position=tag_position)
     return frame
 
@@ -285,7 +305,7 @@ def webcam_test():
         frame = cv2.flip(frame, 1)
         if ret:
             keystroke = cv2.waitKey(1)
-            frame = select_zone(frame, (0.33,0.2,0.66,0.8), tags=['Programmer', 'Fernando', 'Perez'], color=(130,58,14), normalized=True)
+            frame = select_zone(frame, (0.33,0.2,0.66,0.8), tags=['MIT License', '(C) Copyright\n    Fernando\n    Perez\n    Gutierrez'], color=(130,58,14), thickness=2, filled=True, normalized=True)
             cv2.imshow(window_name, frame)
             # True if escape 'esc' is pressed
             if keystroke == 27:
@@ -319,7 +339,7 @@ def get_complete_help():
     * webcam_test:
     {}
 
-    '''.format('', '', help, select_zone.__doc__, add_peephole.__doc__,
+    '''.format(select_zone.__doc__, add_peephole.__doc__,
                add_tags.__doc__, get_lighter_color.__doc__, adjust_position.__doc__,
                webcam_test.__doc__)
 
