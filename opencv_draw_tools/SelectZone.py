@@ -113,13 +113,32 @@ def add_tags(frame, position, tags, tag_position=None, alpha=0.75, color=(20, 20
             else:
                 tag_position = 'bottom_right'
 
+    # Add triangle to know to whom each tag belongs
+    if tag_position == 'bottom_right':
+        pt1 = (x2 + margin - 1, y2 - (margin*2 + text_height)*len(tags) - text_height - margin)
+        pt2 = (pt1[0], pt1[1] + text_height + margin*2)
+        pt3 = (pt1[0] - margin + 1, pt1[1] + int(text_height/2)+margin)
+    elif tag_position == 'bottom_left':
+        pt1 = (x1 - margin + 1, y2 - (margin*2 + text_height)*len(tags) - text_height - margin)
+        pt2 = (pt1[0], pt1[1] + text_height + margin*2)
+        pt3 = (pt1[0] + margin - 1, pt1[1] + int(text_height/2)+margin)
+    elif tag_position == 'top':
+        pt1 = (x1 + margin + int(text_width/3), y1 - margin*2 + 1)
+        pt2 = (pt1[0] + int(text_width/3) + margin*2, pt1[1])
+        pt3 = (int((pt1[0] + pt2[0])/2), pt1[1] + margin*2 - 1)
+
+    if tag_position != 'inside':
+        overlay = frame.copy()
+        cv2.drawContours(overlay, [np.array([pt1, pt2, pt3])], 0, color, -1)
+        cv2.addWeighted(overlay, alpha, frame, 1-alpha, 0, frame)
+
     overlay = frame.copy()
     for i, tag in enumerate(tags):
         reverse_i = len(tags) - i
         extra_adjustment = 2 if tag[-1] == '\n' else 1
         if tag_position == 'top':
-            cv2.rectangle(overlay, (x1 + margin, y1 - (margin*2 + text_height)*reverse_i - text_height - margin * extra_adjustment),
-                         (x1 + text_width + margin*3, y1 - (margin*2 + text_height)*reverse_i + text_height - margin), color,-1)
+            cv2.rectangle(overlay, (x1 + margin, y1 - (margin + text_height)*reverse_i - margin * (reverse_i-1) - text_height - margin * (extra_adjustment - 1 )),
+                         (x1 + text_width + margin*3, y1 - (margin + text_height)*reverse_i - margin * (reverse_i) + text_height), color,-1)
         elif tag_position == 'inside':
             cv2.rectangle(overlay, (x1 + margin, y1 + (margin*2 + text_height)*(i+1) - text_height - margin - extra_adjustment),
                          (x1 + text_width + margin*3, y1 + (margin*2 + text_height)*(i+1) + text_height - margin), color,-1)
@@ -129,23 +148,25 @@ def add_tags(frame, position, tags, tag_position=None, alpha=0.75, color=(20, 20
         elif tag_position == 'bottom_right':
             cv2.rectangle(overlay, (x2 + margin, y2 - (margin*2 + text_height)*reverse_i - text_height - margin * extra_adjustment),
                              (x2 + text_width + margin*3, y2 - (margin*2 + text_height)*reverse_i + text_height - margin), color,-1)
-        y1 += margin
-        y2 += margin
+        if tag_position != 'top':
+            y1 += margin
+            y2 += margin
     cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
     x1, y1, x2, y2 = position
     for i, tag in enumerate(tags):
         reverse_i = len(tags) - i
         extra_adjustment = int(margin*( 0.5 if tag[-1] == '\n' else 0))
         if tag_position == 'top':
-            cv2.putText(frame, tag.replace('\n',''), (x1 + margin*2, y1 - (margin*2 + text_height)*reverse_i - extra_adjustment), font, font_scale, font_color, thickness)
+            cv2.putText(frame, tag.replace('\n',''), (x1 + margin*2, y1 - (margin + text_height)*reverse_i - margin * (reverse_i-1) + int(margin/2) - extra_adjustment), font, font_scale, font_color, thickness)
         elif tag_position == 'inside':
             cv2.putText(frame, tag.replace('\n',''), (x1 + margin*2, y1 + (margin*2 + text_height)*(i+1) - extra_adjustment), font, font_scale, font_color, thickness)
         elif tag_position == 'bottom_left':
             cv2.putText(frame, tag.replace('\n',''), (x1 - (text_width + margin*2), y2 - (margin*2 + text_height)*reverse_i - extra_adjustment), font, font_scale, font_color, thickness)
         elif tag_position == 'bottom_right':
             cv2.putText(frame, tag.replace('\n',''), (x2 + margin*2, y2 - (margin*2 + text_height)*reverse_i - extra_adjustment), font, font_scale, font_color, thickness)
-        y1 += margin
-        y2 += margin
+        if tag_position != 'top':
+            y1 += margin
+            y2 += margin
 
     return frame
 
@@ -305,7 +326,9 @@ def webcam_test():
         frame = cv2.flip(frame, 1)
         if ret:
             keystroke = cv2.waitKey(1)
-            frame = select_zone(frame, (0.33,0.2,0.66,0.8), tags=['MIT License', '(C) Copyright\n    Fernando\n    Perez\n    Gutierrez'], color=(130,58,14), thickness=2, filled=True, normalized=True)
+            position = (0.33,0.2,0.66,0.8)
+            tags = ['MIT License', '(C) Copyright\n    Fernando\n    Perez\n    Gutierrez']
+            frame = select_zone(frame, position, tags=tags, color=(130,58,14), thickness=2, filled=True, normalized=True)
             cv2.imshow(window_name, frame)
             # True if escape 'esc' is pressed
             if keystroke == 27:
