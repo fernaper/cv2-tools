@@ -87,7 +87,9 @@ def webcam_test():
         frame = cv2.flip(frame, 1)
         if ret:
             keystroke = cv2.waitKey(1)
-            frame = select_zone(frame, (0.33,0.2,0.66,0.8), tags=['Tag 1', 'Tag 2', 'Tag 3\n  - Tag 3.1'], filled=True, normalized=True)
+            position = (0.33,0.2,0.66,0.8)
+            tags = ['MIT License', '(C) Copyright\n    Fernando\n    Perez\n    Gutierrez']
+            frame = select_zone(frame, position, tags=tags, color=(130,58,14), thickness=2, filled=True, normalized=True)
             cv2.imshow(window_name, frame)
             # True if escape 'esc' is pressed
             if keystroke == 27:
