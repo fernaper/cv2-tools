@@ -13,6 +13,7 @@ You will need to install:
 
 * opencv >= 3.6.2
 * numpy >= 1.13.3
+* python-constraint >= 1.4.0
 
 You can simply execute:
 `pip install -r requirements.txt`
