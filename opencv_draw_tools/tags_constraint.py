@@ -17,6 +17,12 @@ def rectangle_collision_list_rectangles (rectangle, list_rectangles):
             return True
     return False
 
+def is_valid(position, frame_shape, other_selected_zones):
+    x1, y1, x2, y2 = position
+    width, height = frame_shape
+    return x1 >= 0 and x2 > x1 and y1 >= 0 and y2 > y1 and x2 <= width and y2 <= height and \
+        not rectangle_collision_list_rectangles(position, other_selected_zones)
+
 def get_possible_positions(width, height, all_selected_zones, all_tags_shapes, margin=5, frame=[]):
     problem = Problem()
     for i, rectangle in enumerate(all_selected_zones):
@@ -29,8 +35,7 @@ def get_possible_positions(width, height, all_selected_zones, all_tags_shapes, m
         other_selected_zones = all_selected_zones[:i] + all_selected_zones[i+1:]
         for side in sides:
             # Only accepts zones inside the frame with tags not inside other selections
-            if rectangle_collision_rectangle(side[:-1], (0, 0, width, height)) and \
-                not rectangle_collision_list_rectangles(side[:-1], other_selected_zones):
+            if is_valid(side[:-1], (width,height), other_selected_zones):
                 valid_sides.append(side)
         problem.addVariable('zone_{}'.format(i), valid_sides)
 
@@ -66,6 +71,7 @@ def get_possible_positions(width, height, all_selected_zones, all_tags_shapes, m
             info_zone = best_solution['zone_{}'.format(i)]
             # This is for testing where this method thinks tags will be poisitionated
             if len(frame):
+                #print(info_zone)
                 cv2.rectangle(frame, (info_zone[0],info_zone[1]),(info_zone[2], info_zone[3]), (0,255,0),0)
             if info_zone[0] >= 0 and info_zone[2] <= width and info_zone[1] >= 0 and info_zone[3] <= height:
                 final_ans.append(info_zone[4])
