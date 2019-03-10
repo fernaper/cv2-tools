@@ -25,6 +25,7 @@ def is_valid(position, frame_shape, other_selected_zones):
 
 def get_possible_positions(width, height, all_selected_zones, all_tags_shapes, margin=5, frame=[]):
     problem = Problem()
+    conflict_zones = []
     for i, rectangle in enumerate(all_selected_zones):
         tag_width, tag_height = all_tags_shapes[i]
         sides = [(rectangle[2], rectangle[3] - tag_height - margin, rectangle[2] + tag_width, rectangle[3] - margin*2, 'bottom_right'),
@@ -37,13 +38,20 @@ def get_possible_positions(width, height, all_selected_zones, all_tags_shapes, m
             # Only accepts zones inside the frame with tags not inside other selections
             if is_valid(side[:-1], (width,height), other_selected_zones):
                 valid_sides.append(side)
-        problem.addVariable('zone_{}'.format(i), valid_sides)
+        if valid_sides:
+            problem.addVariable('zone_{}'.format(i), valid_sides)
+        else:
+            conflict_zones.append(i)
 
-    for i in range(len(all_selected_zones) - 1):
+    for i in range(len(all_selected_zones)):
+        if i in conflict_zones:
+            continue
         # Only accepts tags not collisioning with other tags
-        problem.addConstraint(lambda zone_1, zone_2:
-            not rectangle_collision_rectangle(zone_1[:-1], zone_2[:-1]), ('zone_{}'.format(i), 'zone_{}'.format(i+1))
-        )
+        for j in range(i+1,len(all_selected_zones)):
+            if j not in conflict_zones:
+                problem.addConstraint(lambda zone_1, zone_2:
+                    not rectangle_collision_rectangle(zone_1[:-1], zone_2[:-1]), ('zone_{}'.format(i), 'zone_{}'.format(j))
+                )
 
     best_solution = None
     score = 0
@@ -68,7 +76,11 @@ def get_possible_positions(width, height, all_selected_zones, all_tags_shapes, m
     final_ans = []
     if best_solution:
         for i in range(len(all_selected_zones)):
-            info_zone = best_solution['zone_{}'.format(i)]
+            zone_name = 'zone_{}'.format(i)
+            if zone_name not in best_solution:
+                final_ans.append(None)
+                continue
+            info_zone = best_solution[zone_name]
             # This is for testing where this method thinks tags will be poisitionated
             if len(frame):
                 #print(info_zone)
