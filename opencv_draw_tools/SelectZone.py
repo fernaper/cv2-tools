@@ -4,7 +4,7 @@ import numpy as np
 import sys
 import cv2
 
-import tags_constraint
+from opencv_draw_tools.tags_constraint import *
 
 """
     You can change it.
@@ -406,8 +406,8 @@ def select_multiple_zones(frame, all_selected_zones, all_tags=None, alpha=0.9, c
         all_tags_shapes = []
         for i, zone in enumerate(all_selected_zones):
             all_tags_shapes.append(get_shape_tags(zone, all_tags[i], margin=margin))
-        # Here you could pass the frame if you want to see where tags_constraint thinks the tags will be.           Just: frame=frame     \/
-        best_position = tags_constraint.get_possible_positions(f_width, f_height, all_selected_zones, all_tags_shapes, margin=margin, frame=[])
+        # Here you could pass the frame if you want to see where get_possible_positions thinks the tags will be.           Just: frame=frame     \/
+        best_position = get_possible_positions(f_width, f_height, all_selected_zones, all_tags_shapes, margin=margin, frame=[])
         for i, zone in enumerate(all_selected_zones):
             if best_position:
                 position = best_position[i]
@@ -430,9 +430,9 @@ def webcam_test():
         if ret:
             keystroke = cv2.waitKey(1)
             position1 = (0.33,0.2,0.66,0.8)
-            tags1 = ['MIT License', '(C) Copyright\n    Fernando\n    Perez\n    Gutierrez\n hola\n', 'mundo']
-            position2 = (0.22,0.4,0.3,0.88)
-            tags2 = ['Release', 'v1.0.0']
+            tags1 = ['MIT License', '(C) Copyright\n    Fernando\n    Perez\n    Gutierrez', '@fernaperg']
+            position2 = (0.1,0.4,0.3,0.88)
+            tags2 = ['Release', 'v1.0.1']
             frame = select_multiple_zones(frame, [position1,position2], all_tags=[tags1,tags2], color=(14,28,200),
                                 thickness=2, filled=True, normalized=True)
             cv2.imshow(window_name, frame)
