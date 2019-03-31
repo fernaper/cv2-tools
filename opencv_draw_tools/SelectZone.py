@@ -37,7 +37,7 @@ def get_shape_tags(position, tags, margin=5,
     with the current configuration.
 
     Keyword arguments:
-    position -- touple with 4 elements (x1, y1, x2, y2)
+    position -- object of type Rectangle with 4 attributes (x1, y1, x2, y2)
                 This elements must be between 0 and frame height/width.
     tags -- list of strings/tags you want to check shape.
     margin -- extra margin in pixels to be separeted with the selected zone. (default 5)
@@ -52,7 +52,6 @@ def get_shape_tags(position, tags, margin=5,
 
     """
     font, font_scale, font_color, thickness = font_info
-    x1, y1, x2, y2 = position
 
     aux_tags = []
     for tag in tags:
@@ -82,7 +81,7 @@ def add_tags(frame, position, tags, tag_position=None, alpha=0.75, color=(20, 20
 
     Keyword arguments:
     frame -- opencv frame object where you want to draw
-    position -- touple with 4 elements (x1, y1, x2, y2)
+    position -- object of type Rectangle with 4 attributes (x1, y1, x2, y2)
                 This elements must be between 0 and 1 in case it is normalized
                 or between 0 and frame height/width.
     tags -- list of strings/tags you want to associate to the selected zone.
@@ -108,9 +107,11 @@ def add_tags(frame, position, tags, tag_position=None, alpha=0.75, color=(20, 20
     A new drawed Frame
 
     """
+    if not tags:
+        return frame
+
     f_height, f_width = frame.shape[:2]
     font, font_scale, font_color, thickness = font_info
-    x1, y1, x2, y2 = position
 
     aux_tags = []
     for tag in tags:
@@ -137,11 +138,11 @@ def add_tags(frame, position, tags, tag_position=None, alpha=0.75, color=(20, 20
             - If it doesn't fit, try to put the text On top of the rectangle
     '''
     if not tag_position:
-        fits_right = x2 + text_width + margin*3 <= f_width
-        fits_left = x1 - (text_width + margin*3) >= 0
-        fits_below = (text_height + margin)*len(tags) - margin <= y2 - thickness
-        fits_inside = x1 + text_width + margin*3 <= x2 - thickness and \
-                      y1 + (margin*2 + text_height)*len(tags) + text_height - margin <= y2 - thickness
+        fits_right = position.x2 + text_width + margin*3 <= f_width
+        fits_left = position.x1 - (text_width + margin*3) >= 0
+        fits_below = (text_height + margin)*len(tags) - margin <= position.y2 - thickness
+        fits_inside = position.x1 + text_width + margin*3 <= position.x2 - thickness and \
+                      position.y1 + (margin*2 + text_height)*len(tags) + text_height - margin <= position.y2 - thickness
 
         if fits_right and fits_below:
             tag_position = 'bottom_right'
@@ -161,15 +162,15 @@ def add_tags(frame, position, tags, tag_position=None, alpha=0.75, color=(20, 20
 
     # Add triangle to know to whom each tag belongs
     if tag_position == 'bottom_right':
-        pt1 = (x2 + margin - 1, y2 - (margin + text_height)*len(tags) - text_height - margin * (len(tags)-1))
+        pt1 = (position.x2 + margin - 1, position.y2 - (margin + text_height)*len(tags) - text_height - margin * (len(tags)-1))
         pt2 = (pt1[0], pt1[1] + text_height + margin)
         pt3 = (pt1[0] - margin + 1, pt1[1] + int(text_height/2)+margin)
     elif tag_position == 'bottom_left':
-        pt1 = (x1 - margin + 1, y2 - (margin + text_height)*len(tags) - text_height - margin * (len(tags)-1))
+        pt1 = (position.x1 - margin + 1, position.y2 - (margin + text_height)*len(tags) - text_height - margin * (len(tags)-1))
         pt2 = (pt1[0], pt1[1] + text_height + margin)
         pt3 = (pt1[0] + margin - 1, pt1[1] + int(text_height/2)+margin)
     elif tag_position == 'top':
-        pt1 = (x1 + margin + int(text_width/3), y1 - margin*2 + 1)
+        pt1 = (position.x1 + margin + int(text_width/3), position.y1 - margin*2 + 1)
         pt2 = (pt1[0] + int(text_width/3) + margin*2, pt1[1])
         pt3 = (int((pt1[0] + pt2[0])/2), pt1[1] + margin*2 - 1)
 
@@ -183,38 +184,37 @@ def add_tags(frame, position, tags, tag_position=None, alpha=0.75, color=(20, 20
         reverse_i = len(tags) - i
         extra_adjustment = 2 if tag[-1] == '\n' else 1
         if tag_position == 'top':
-            cv2.rectangle(overlay, (x1 + margin, y1 - (margin + text_height)*reverse_i - margin * (reverse_i-1) - text_height - margin * (extra_adjustment - 1 )),
-                          (x1 + text_width + margin*3, y1 - (margin + text_height)*reverse_i - margin * (reverse_i) + text_height), color,-1)
+            cv2.rectangle(overlay, (position.x1 + margin, position.y1 - (margin + text_height)*reverse_i - margin * (reverse_i-1) - text_height - margin * (extra_adjustment - 1 )),
+                          (position.x1 + text_width + margin*3, position.y1 - (margin + text_height)*reverse_i - margin * (reverse_i) + text_height), color,-1)
         elif tag_position == 'inside':
-            cv2.rectangle(overlay, (x1 + margin, y1 + (margin*2 + text_height)*(i+1) + margin*i - text_height - margin * extra_adjustment),
-                          (x1 + text_width + margin*3, y1 + (margin*2 + text_height)*(i+1) + margin*i + text_height - margin), color,-1)
+            cv2.rectangle(overlay, (position.x1 + margin, position.y1 + (margin*2 + text_height)*(i+1) + margin*i - text_height - margin * extra_adjustment),
+                          (position.x1 + text_width + margin*3, position.y1 + (margin*2 + text_height)*(i+1) + margin*i + text_height - margin), color,-1)
         elif tag_position == 'bottom_left':
-            cv2.rectangle(overlay, (x1 - (text_width + margin*3), y2 - (margin + text_height)*reverse_i - margin * (reverse_i-1) - text_height - margin * (extra_adjustment - 1)),
-                          (x1 - margin, y2 - (margin + text_height)*reverse_i - margin * (reverse_i) + text_height), color,-1)
+            cv2.rectangle(overlay, (position.x1 - (text_width + margin*3), position.y2 - (margin + text_height)*reverse_i - margin * (reverse_i-1) - text_height - margin * (extra_adjustment - 1)),
+                          (position.x1 - margin, position.y2 - (margin + text_height)*reverse_i - margin * (reverse_i) + text_height), color,-1)
         elif tag_position == 'bottom_right':
-            cv2.rectangle(overlay, (x2 + margin, y2 - (margin + text_height)*reverse_i - margin * (reverse_i-1) - text_height - margin * (extra_adjustment - 1)),
-                          (x2 + text_width + margin*3, y2 - (margin + text_height)*reverse_i - margin * (reverse_i) + text_height), color,-1)
+            cv2.rectangle(overlay, (position.x2 + margin, position.y2 - (margin + text_height)*reverse_i - margin * (reverse_i-1) - text_height - margin * (extra_adjustment - 1)),
+                          (position.x2 + text_width + margin*3, position.y2 - (margin + text_height)*reverse_i - margin * (reverse_i) + text_height), color,-1)
 
     cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
-    x1, y1, x2, y2 = position
     for i, tag in enumerate(tags):
         reverse_i = len(tags) - i
         extra_adjustment = int(margin*( 0.5 if tag[-1] == '\n' else 0))
         if tag_position == 'top':
             cv2.putText(frame, tag.replace('\n',''),
-                        (x1 + margin*2, y1 - (margin + text_height)*reverse_i - margin * (reverse_i-1) + int(margin/2) - extra_adjustment),
+                        (position.x1 + margin*2, position.y1 - (margin + text_height)*reverse_i - margin * (reverse_i-1) + int(margin/2) - extra_adjustment),
                         font, font_scale, font_color, thickness)
         elif tag_position == 'inside':
             cv2.putText(frame, tag.replace('\n',''),
-                        (x1 + margin*2, y1 + (margin*2 + text_height)*(i+1) + margin*i - extra_adjustment),
+                        (position.x1 + margin*2, position.y1 + (margin*2 + text_height)*(i+1) + margin*i - extra_adjustment),
                         font, font_scale, font_color, thickness)
         elif tag_position == 'bottom_left':
             cv2.putText(frame, tag.replace('\n',''),
-                        (x1 - (text_width + margin*2), y2 - (margin + text_height)*reverse_i - margin * (reverse_i-1) + int(margin/2) - extra_adjustment),
+                        (position.x1 - (text_width + margin*2), position.y2 - (margin + text_height)*reverse_i - margin * (reverse_i-1) + int(margin/2) - extra_adjustment),
                         font, font_scale, font_color, thickness)
         elif tag_position == 'bottom_right':
             cv2.putText(frame, tag.replace('\n',''),
-                        (x2 + margin*2, y2 - (margin + text_height)*reverse_i - margin * (reverse_i-1) + int(margin/2) - extra_adjustment),
+                        (position.x2 + margin*2, position.y2 - (margin + text_height)*reverse_i - margin * (reverse_i-1) + int(margin/2) - extra_adjustment),
                         font, font_scale, font_color, thickness)
 
     return frame
@@ -227,7 +227,7 @@ def add_peephole(frame, position, alpha=0.5, color=(110,70,45), thickness=2, lin
 
     Keyword arguments:
     frame -- opencv frame object where you want to draw
-    position -- touple with 4 elements (x1, y1, x2, y2)
+    position -- object of type Rectangle with 4 attributes (x1, y1, x2, y2)
                 This elements must be between 0 and 1 in case it is normalized
                 or between 0 and frame height/width.
                 Outer rectangle on which the peephole is drawn.
@@ -244,28 +244,27 @@ def add_peephole(frame, position, alpha=0.5, color=(110,70,45), thickness=2, lin
     A new drawed Frame
 
     """
-    x1, y1, x2, y2 = position
     # Min value of thickness = 2
     thickness = min(thickness,2)
     # If the selected zone is too small don't draw
-    if x2 - x1 > thickness*2 + line_length  and y2 - y1 > thickness*2 + line_length:
+    if position.x2 - position.x1 > thickness*2 + line_length  and position.y2 - position.y1 > thickness*2 + line_length:
         overlay = frame.copy()
         if corners:
             # Draw horizontal lines of the corners
-            cv2.line(overlay,(x1, y1),(x1 + line_length, y1), color, thickness+1)
-            cv2.line(overlay,(x2, y1),(x2 - line_length, y1), color, thickness+1)
-            cv2.line(overlay,(x1, y2),(x1 + line_length, y2), color, thickness+1)
-            cv2.line(overlay,(x2, y2),(x2 - line_length, y2), color, thickness+1)
+            cv2.line(overlay,(position.x1, position.y1),(position.x1 + line_length, position.y1), color, thickness+1)
+            cv2.line(overlay,(position.x2, position.y1),(position.x2 - line_length, position.y1), color, thickness+1)
+            cv2.line(overlay,(position.x1, position.y2),(position.x1 + line_length, position.y2), color, thickness+1)
+            cv2.line(overlay,(position.x2, position.y2),(position.x2 - line_length, position.y2), color, thickness+1)
             # Draw vertical lines of the corners
-            cv2.line(overlay,(x1, y1),(x1, y1 + line_length), color, thickness+1)
-            cv2.line(overlay,(x1, y2),(x1, y2 - line_length), color, thickness+1)
-            cv2.line(overlay,(x2, y1),(x2, y1 + line_length), color, thickness+1)
-            cv2.line(overlay,(x2, y2),(x2, y2 - line_length), color, thickness+1)
+            cv2.line(overlay,(position.x1, position.y1),(position.x1, position.y1 + line_length), color, thickness+1)
+            cv2.line(overlay,(position.x1, position.y2),(position.x1, position.y2 - line_length), color, thickness+1)
+            cv2.line(overlay,(position.x2, position.y1),(position.x2, position.y1 + line_length), color, thickness+1)
+            cv2.line(overlay,(position.x2, position.y2),(position.x2, position.y2 - line_length), color, thickness+1)
         # Added extra lines that gives the peephole effect
-        cv2.line(overlay,(x1, int((y1 + y2) / 2)),(x1 + line_length, int((y1 + y2) / 2)), color, thickness-1)
-        cv2.line(overlay,(x2, int((y1 + y2) / 2)),(x2 - line_length, int((y1 + y2) / 2)), color, thickness-1)
-        cv2.line(overlay,(int((x1 + x2) / 2), y1),(int((x1 + x2) / 2), y1 + line_length), color, thickness-1)
-        cv2.line(overlay,(int((x1 + x2) / 2), y2),(int((x1 + x2) / 2), y2 - line_length), color, thickness-1)
+        cv2.line(overlay,(position.x1, int((position.y1 + position.y2) / 2)),(position.x1 + line_length, int((position.y1 + position.y2) / 2)), color, thickness-1)
+        cv2.line(overlay,(position.x2, int((position.y1 + position.y2) / 2)),(position.x2 - line_length, int((position.y1 + position.y2) / 2)), color, thickness-1)
+        cv2.line(overlay,(int((position.x1 + position.x2) / 2), position.y1),(int((position.x1 + position.x2) / 2), position.y1 + line_length), color, thickness-1)
+        cv2.line(overlay,(int((position.x1 + position.x2) / 2), position.y2),(int((position.x1 + position.x2) / 2), position.y2 - line_length), color, thickness-1)
         cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
     return frame
 
@@ -275,7 +274,7 @@ def adjust_position(shape, position, normalized=False, thickness=0):
     Keyword arguments:
     shape -- touple with 2 elements (height, width)
              this information should be the height and width of the frame.
-    position -- touple with 4 elements (x1, y1, x2, y2)
+    position -- object of type Rectangle with 4 attributes (x1, y1, x2, y2)
                 This elements must be between 0 and 1 in case it is normalized
                 or between 0 and frame height/width.
     normalized -- boolean parameter, if True, position provided normalized (between 0 and 1)
@@ -287,39 +286,38 @@ def adjust_position(shape, position, normalized=False, thickness=0):
 
     """
     f_height, f_width = shape
-    x1, y1, x2, y2 = position
     if normalized:
-        x1 *= f_width
-        x2 *= f_width
-        y1 *= f_height
-        y2 *= f_height
+        position.x1 *= f_width
+        position.x2 *= f_width
+        position.y1 *= f_height
+        position.y2 *= f_height
 
-    if x1 < 0 or x1 > f_width:
+    if position.x1 < 0 or position.x1 > f_width:
         if not IGNORE_ERRORS:
             raise ValueError('Error: x1 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(x1, 0, f_width))
         else:
-            x1 = min(max(x1,0),f_width)
-    if x2 < 0 or x2 > f_width:
+            position.x1 = min(max(position.x1,0),f_width)
+    if position.x2 < 0 or position.x2 > f_width:
         if not IGNORE_ERRORS:
             raise ValueError('Error: x2 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(x2, 0, f_width))
         else:
-            x2 = min(max(x2,0),f_width)
-    if y1 < 0 or y1 > f_height:
+            position.x2 = min(max(position.x2,0),f_width)
+    if position.y1 < 0 or position.y1 > f_height:
         if not IGNORE_ERRORS:
             raise ValueError('Error: y1 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(y1, 0, f_height))
         else:
-            y1 = min(max(y1,0),f_height)
-    if y2 < 0 or y2 > f_height:
+            position.y1 = min(max(position.y1,0),f_height)
+    if position.y2 < 0 or position.y2 > f_height:
         if not IGNORE_ERRORS:
             raise ValueError('Error: y2 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(y2, 0, f_height))
         else:
-            y2 = min(max(y2,0),f_height)
+            position.y2 = min(max(position.y2,0),f_height)
     # Auto adjust the limits of the selected zone
-    x2 = int(min(max(x2, thickness*2), f_width - thickness))
-    y2 = int(min(max(y2, thickness*2), f_height - thickness))
-    x1 = int(min(max(x1, thickness), x2 - thickness))
-    y1 = int(min(max(y1, thickness), y2 - thickness))
-    return (x1, y1, x2, y2)
+    position.x2 = int(min(max(position.x2, thickness*2), f_width - thickness))
+    position.y2 = int(min(max(position.y2, thickness*2), f_height - thickness))
+    position.x1 = int(min(max(position.x1, thickness), position.x2 - thickness))
+    position.y1 = int(min(max(position.y1, thickness), position.y2 - thickness))
+    return position
 
 def select_zone(frame, position, tags=[], tag_position=None, alpha=0.9, color=(110,70,45),
                 normalized=False, thickness=2, filled=False, peephole=True, margin=5):
@@ -327,7 +325,7 @@ def select_zone(frame, position, tags=[], tag_position=None, alpha=0.9, color=(1
 
     Keyword arguments:
     frame -- opencv frame object where you want to draw
-    position -- touple with 4 elements (x1, y1, x2, y2)
+    position -- object of type Rectangle with 4 attributes (x1, y1, x2, y2)
                 This elements must be between 0 and 1 in case it is normalized
                 or between 0 and frame height/width.
     tags -- list of strings/tags you want to associate to the selected zone (default [])
@@ -352,17 +350,17 @@ def select_zone(frame, position, tags=[], tag_position=None, alpha=0.9, color=(1
     A new drawed Frame
 
     """
-    x1, y1, x2, y2 = position = adjust_position(frame.shape[:2], position, normalized=normalized, thickness=thickness)
+    position = adjust_position(frame.shape[:2], position, normalized=normalized, thickness=thickness)
     if peephole:
         frame = add_peephole(frame, position, alpha=alpha, color=color)
 
     if filled:
         overlay = frame.copy()
-        cv2.rectangle(overlay, (x1, y1), (x2, y2), color,thickness=cv2.FILLED)
+        cv2.rectangle(overlay, (position.x1, position.y1), (position.x2, position.y2), color,thickness=cv2.FILLED)
         cv2.addWeighted(overlay, alpha/3.0, frame, 1 - alpha/3.0, 0, frame)
 
     overlay = frame.copy()
-    cv2.rectangle(overlay, (x1, y1), (x2, y2), color,thickness=thickness)
+    cv2.rectangle(overlay, (position.x1, position.y1), (position.x2, position.y2), color,thickness=thickness)
     cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
 
     frame = add_tags(frame, position, tags, tag_position=tag_position, margin=margin)
@@ -396,7 +394,7 @@ def select_multiple_zones(frame, all_selected_zones, all_tags=None, alpha=0.9, c
     A new drawed Frame
 
     """
-    all_selected_zones = [adjust_position(frame.shape[:2], zone, normalized=normalized, thickness=thickness) for zone in all_selected_zones]
+    all_selected_zones = [adjust_position(frame.shape[:2], Rectangle(zone[0],zone[1],zone[2],zone[3]), normalized=normalized, thickness=thickness) for zone in all_selected_zones]
     if not all_tags:
         for zone in all_selected_zones:
             frame = select_zone(frame, zone, alpha=alpha, color=color, normalized=normalized,
@@ -429,9 +427,9 @@ def webcam_test():
         frame = cv2.flip(frame, 1)
         if ret:
             keystroke = cv2.waitKey(1)
-            position1 = (0.33,0.2,0.66,0.8)
+            position1 = (0.33,0.25,0.66,0.85)
             tags1 = ['MIT License', '(C) Copyright\n    Fernando\n    Perez\n    Gutierrez', '@fernaperg']
-            position2 = (0.1,0.4,0.3,0.88)
+            position2 = (0.12,0.41,0.3,0.9)
             tags2 = ['Release', 'v1.0.1']
             frame = select_multiple_zones(frame, [position1,position2], all_tags=[tags1,tags2], color=(14,28,200),
                                 thickness=2, filled=True, normalized=True)
