@@ -9,14 +9,12 @@ def face_detector(frame, scale=0.25):
     small_frame = cv2.resize(frame, (0, 0), fx=scale, fy=scale)
     rgb_small_frame = small_frame[:, :, ::-1]
     face_locations = face_recognition.face_locations(rgb_small_frame)
-    zones = []
-    tags = []
+    selector = cv2_tools.SelectorCV2(color=(200,90,0), filled=True)
     for i, face_location in enumerate(face_locations):
         y1, x2, y2, x1 = [position/scale for position in face_location]
-        zones.append((x1,y1,x2,y2))
-        tags.append(['Face {}'.format(i)])
-    return cv2_tools.select_multiple_zones(frame, zones, all_tags=tags,
-                    color=(14,28,200), filled=True)
+        selector.add_zone((x1,y1,x2,y2),'Face {}'.format(i))
+    return selector.draw(frame)
+
 
 def main():
     cap = cv2.VideoCapture(0)
@@ -31,8 +29,8 @@ def main():
             if keystroke == 27:
                 print('Exit')
                 break
+    cap.release()
     cv2.destroyAllWindows()
-    cv2.VideoCapture(0).release()
 
 if __name__ == '__main__':
     main()
