@@ -14,8 +14,87 @@ from opencv_draw_tools.tags_constraint import *
 """
 IGNORE_ERRORS = False
 
+# TODO: Document SelectorCV2
+class SelectorCV2(object):
+
+
+    def __init__(self, alpha=0.9, color=(110,70,45), normalized=False, thickness=2, filled=False, peephole=True, margin=5):
+        self.zones = []
+        self.all_tags = []
+        # Visual parameters
+        self.alpha = alpha
+        self.color = color
+        self.normalized = normalized
+        self.thickness = thickness
+        self.filled = filled
+        self.peephole = peephole
+        self.margin = margin
+
+
+    def set_properties(self, alpha=None, color=None, normalized=None,
+                       thickness=None, filled=None, peephole=None,
+                       margin=None):
+        if alpha is not None:
+            self.alpha = alpha
+        if color is not None:
+            self.color = color
+        if normalized is not None:
+            self.normalized = normalized
+        if thickness is not None:
+            self.thickness = thickness
+        if filled is not None:
+            self.filled = filled
+        if peephole is not None:
+            self.peephole = peephole
+        if margin is not None:
+            self.margin = margin
+
+
+    def add_zone(self, zone, tags=None):
+        self.zones.append(zone)
+        if tags and type(tags) is not list:
+            tags = [tags]
+        elif not tags:
+            tags = []
+        self.all_tags.append(tags)
+
+
+    def set_range_valid_rectangles(self, origin, destination):
+        self.zones = self.zones[origin:destination]
+        self.all_tags = self.all_tags[origin:destination]
+
+
+    def set_valid_rectangles(self, indexes):
+        # This if is just for efficiency
+        if not indexes:
+            self.zones = []
+            self.all_tags = []
+            return
+
+        for i in range(len(self.zones)):
+            if i not in indexes:
+                self.zones.pop(i)
+                self.all_tags.pop(i)
+
+
+    def draw(self, frame):
+        new_frame = select_multiple_zones(
+            frame,
+            self.zones,
+            all_tags=self.all_tags,
+            alpha=self.alpha,
+            color=self.color,
+            normalized=self.normalized,
+            thickness=self.thickness,
+            filled=self.filled,
+            peephole=self.peephole,
+            margin=self.margin)
+        return new_frame
+
+
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
+
 
 def get_lighter_color(color):
     """Generates a lighter color.
@@ -30,6 +109,7 @@ def get_lighter_color(color):
     add = 255 - max(color)
     add = min(add,30)
     return (color[0] + add, color[1] + add, color[2] + add)
+
 
 def get_shape_tags(position, tags, margin=5,
                    font_info=(cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.75, (255,255,255), 1)):
@@ -71,6 +151,7 @@ def get_shape_tags(position, tags, margin=5,
         line_height = max(line_height, text_height + size[1] + margin)
 
     return (text_width + margin * 3, (margin + text_height)*(len(tags) - 1) + 2*text_height + margin*(len(tags)-1))
+
 
 def add_tags(frame, position, tags, tag_position=None, alpha=0.75, color=(20, 20, 20),
              margin=5, font_info=(cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.75, (255,255,255), 1)):
@@ -219,6 +300,7 @@ def add_tags(frame, position, tags, tag_position=None, alpha=0.75, color=(20, 20
 
     return frame
 
+
 def add_peephole(frame, position, alpha=0.5, color=(110,70,45), thickness=2, line_length=7, corners=True):
     """Add peephole effect to the select_zone.
 
@@ -267,6 +349,7 @@ def add_peephole(frame, position, alpha=0.5, color=(110,70,45), thickness=2, lin
         cv2.line(overlay,(int((position.x1 + position.x2) / 2), position.y2),(int((position.x1 + position.x2) / 2), position.y2 - line_length), color, thickness-1)
         cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
     return frame
+
 
 def adjust_position(shape, position, normalized=False, thickness=0):
     """Auxiliar Method: Adjust provided position to select_zone.
@@ -319,6 +402,7 @@ def adjust_position(shape, position, normalized=False, thickness=0):
     position.y1 = int(min(max(position.y1, thickness), position.y2 - thickness))
     return position
 
+
 def select_zone(frame, position, tags=[], tag_position=None, alpha=0.9, color=(110,70,45),
                 normalized=False, thickness=2, filled=False, peephole=True, margin=5):
     """Draw better rectangles to select zones.
@@ -350,6 +434,8 @@ def select_zone(frame, position, tags=[], tag_position=None, alpha=0.9, color=(1
     A new drawed Frame
 
     """
+    if type(position) is tuple:
+        position = Rectangle(position[0],position[1],position[2],position[3])
     position = adjust_position(frame.shape[:2], position, normalized=normalized, thickness=thickness)
     if peephole:
         frame = add_peephole(frame, position, alpha=alpha, color=color)
@@ -365,6 +451,7 @@ def select_zone(frame, position, tags=[], tag_position=None, alpha=0.9, color=(1
 
     frame = add_tags(frame, position, tags, tag_position=tag_position, margin=margin)
     return frame
+
 
 def select_multiple_zones(frame, all_selected_zones, all_tags=None, alpha=0.9, color=(110,70,45),
                 normalized=False, thickness=2, filled=False, peephole=True, margin=5):
@@ -415,6 +502,7 @@ def select_multiple_zones(frame, all_selected_zones, all_tags=None, alpha=0.9, c
                                 thickness=thickness, filled=filled, peephole=peephole, margin=margin)
     return frame
 
+
 def webcam_test():
     """Reproduce Webcam in real time with a selected zone."""
     print('Launching webcam test')
@@ -439,6 +527,7 @@ def webcam_test():
                 break
     cv2.destroyAllWindows()
     cv2.VideoCapture(0).release()
+
 
 def get_complete_help():
     return '''
