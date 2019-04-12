@@ -15,11 +15,12 @@ from opencv_draw_tools.tags_constraint import *
 IGNORE_ERRORS = False
 
 # TODO: Document SelectorCV2
-class SelectorCV2(object):
+class SelectorCV2():
 
 
-    def __init__(self, alpha=0.9, color=(110,70,45), normalized=False, thickness=2, filled=False, peephole=True, margin=5):
+    def __init__(self, alpha=0.9, color=(110,70,45), normalized=False, thickness=2, filled=False, peephole=True, margin=5, closed_polygon=False):
         self.zones = []
+        self.polygon_zones = []
         self.all_tags = []
         # Visual parameters
         self.alpha = alpha
@@ -29,6 +30,8 @@ class SelectorCV2(object):
         self.filled = filled
         self.peephole = peephole
         self.margin = margin
+        # Polygon
+        self.closed_polygon = closed_polygon
 
 
     def set_properties(self, alpha=None, color=None, normalized=None,
@@ -59,6 +62,33 @@ class SelectorCV2(object):
         self.all_tags.append(tags)
 
 
+    def add_polygon(self, polygon, surrounding_box=False, tags=None):
+        if not polygon:
+            return
+
+        self.polygon_zones.append(polygon)
+
+        if surrounding_box:
+            min_x, min_y, max_x, max_y = polygon[0][0], polygon[0][1], 0, 0
+            for position in polygon:
+                if position[0] < min_x:
+                    min_x = position[0]
+                if position[0] > max_x:
+                    max_x = position[0]
+                if position[1] < min_y:
+                    min_y = position[1]
+                if position[1] > max_y:
+                    max_y = position[1]
+
+            self.zones.append((min_x, min_y, max_x, max_y))
+
+            if tags and type(tags) is not list:
+                tags = [tags]
+            elif not tags:
+                tags = []
+            self.all_tags.append(tags)
+
+
     def set_range_valid_rectangles(self, origin, destination):
         self.zones = self.zones[origin:destination]
         self.all_tags = self.all_tags[origin:destination]
@@ -77,9 +107,9 @@ class SelectorCV2(object):
                 self.all_tags.pop(i)
 
 
-    def draw(self, frame):
-        new_frame = select_multiple_zones(
-            frame,
+    def draw(self, frame, fx=1, fy=1, interpolation=cv2.INTER_LINEAR):
+        next_frame = select_multiple_zones(
+            frame.copy(),
             self.zones,
             all_tags=self.all_tags,
             alpha=self.alpha,
@@ -89,11 +119,20 @@ class SelectorCV2(object):
             filled=self.filled,
             peephole=self.peephole,
             margin=self.margin)
-        return new_frame
+
+        next_frame = select_polygon(
+            next_frame,
+            all_vertexes=self.polygon_zones,
+            thickness=self.thickness,
+            closed=self.closed_polygon
+        )
+
+        return cv2.resize(next_frame, (0,0), fx=fx, fy=fy, interpolation=interpolation)
 
 
 def eprint(*args, **kwargs):
-    print(*args, file=sys.stderr, **kwargs)
+    if not IGNORE_ERRORS:
+        print(*args, file=sys.stderr, **kwargs)
 
 
 def get_lighter_color(color):
@@ -236,10 +275,8 @@ def add_tags(frame, position, tags, tag_position=None, alpha=0.75, color=(20, 20
     else:
         valid = ['bottom_right', 'bottom_left', 'inside', 'top']
         if tag_position not in ['bottom_right', 'bottom_left', 'inside', 'top']:
-            if not IGNORE_ERRORS:
-                raise ValueError('Error, invalid tag_position ({}) must be in: {}'.format(tag_position, valid))
-            else:
-                tag_position = 'bottom_right'
+            eprint('Error, invalid tag_position ({}) must be in: {}'.format(tag_position, valid))
+            tag_position = 'bottom_right'
 
     # Add triangle to know to whom each tag belongs
     if tag_position == 'bottom_right':
@@ -376,31 +413,34 @@ def adjust_position(shape, position, normalized=False, thickness=0):
         position.y2 *= f_height
 
     if position.x1 < 0 or position.x1 > f_width:
-        if not IGNORE_ERRORS:
-            raise ValueError('Error: x1 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(x1, 0, f_width))
-        else:
-            position.x1 = min(max(position.x1,0),f_width)
+        eprint('Error: x1 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(position.x1, 0, f_width))
+        position.x1 = min(max(position.x1,0),f_width)
+
     if position.x2 < 0 or position.x2 > f_width:
-        if not IGNORE_ERRORS:
-            raise ValueError('Error: x2 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(x2, 0, f_width))
-        else:
-            position.x2 = min(max(position.x2,0),f_width)
+        eprint('Error: x2 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(position.x2, 0, f_width))
+        position.x2 = min(max(position.x2,0),f_width)
+
     if position.y1 < 0 or position.y1 > f_height:
-        if not IGNORE_ERRORS:
-            raise ValueError('Error: y1 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(y1, 0, f_height))
-        else:
-            position.y1 = min(max(position.y1,0),f_height)
+        eprint('Error: y1 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(position.y1, 0, f_height))
+        position.y1 = min(max(position.y1,0),f_height)
+
     if position.y2 < 0 or position.y2 > f_height:
-        if not IGNORE_ERRORS:
-            raise ValueError('Error: y2 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(y2, 0, f_height))
-        else:
-            position.y2 = min(max(position.y2,0),f_height)
+        eprint('Error: y2 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(position.y2, 0, f_height))
+        position.y2 = min(max(position.y2,0),f_height)
+
     # Auto adjust the limits of the selected zone
     position.x2 = int(min(max(position.x2, thickness*2), f_width - thickness))
     position.y2 = int(min(max(position.y2, thickness*2), f_height - thickness))
     position.x1 = int(min(max(position.x1, thickness), position.x2 - thickness))
     position.y1 = int(min(max(position.y1, thickness), position.y2 - thickness))
     return position
+
+
+def select_polygon(frame, all_vertexes, color=(110,70,45), thickness=2, closed=False):
+    for vertexes in all_vertexes:
+        vertexes = np.array(vertexes)
+        cv2.polylines(frame, [vertexes], closed, get_lighter_color(color), thickness=thickness-1)
+    return frame
 
 
 def select_zone(frame, position, tags=[], tag_position=None, alpha=0.9, color=(110,70,45),

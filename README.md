@@ -80,7 +80,7 @@ selector.set_range_valid_rectangles( origin, destination)
 set_valid_rectangles(indexes)
 ```
 
-If you want, you can see the example [detect_faces.py](opencv_draw_tools/detect_faces.py), it also use an open source library called `face_recognition`.
+If you want, you can see the example [detect_faces.py](examples/detect_faces.py), it also use an open source library called `face_recognition`.
 
 
 ### Manual method
