@@ -4,7 +4,8 @@ import numpy as np
 import sys
 import cv2
 
-from opencv_draw_tools.tags_constraint import *
+from cv2_tools.tags_constraint import *
+
 
 """
     You can change it.
@@ -14,86 +15,10 @@ from opencv_draw_tools.tags_constraint import *
 """
 IGNORE_ERRORS = False
 
-# TODO: Document SelectorCV2
-class SelectorCV2(object):
-
-
-    def __init__(self, alpha=0.9, color=(110,70,45), normalized=False, thickness=2, filled=False, peephole=True, margin=5):
-        self.zones = []
-        self.all_tags = []
-        # Visual parameters
-        self.alpha = alpha
-        self.color = color
-        self.normalized = normalized
-        self.thickness = thickness
-        self.filled = filled
-        self.peephole = peephole
-        self.margin = margin
-
-
-    def set_properties(self, alpha=None, color=None, normalized=None,
-                       thickness=None, filled=None, peephole=None,
-                       margin=None):
-        if alpha is not None:
-            self.alpha = alpha
-        if color is not None:
-            self.color = color
-        if normalized is not None:
-            self.normalized = normalized
-        if thickness is not None:
-            self.thickness = thickness
-        if filled is not None:
-            self.filled = filled
-        if peephole is not None:
-            self.peephole = peephole
-        if margin is not None:
-            self.margin = margin
-
-
-    def add_zone(self, zone, tags=None):
-        self.zones.append(zone)
-        if tags and type(tags) is not list:
-            tags = [tags]
-        elif not tags:
-            tags = []
-        self.all_tags.append(tags)
-
-
-    def set_range_valid_rectangles(self, origin, destination):
-        self.zones = self.zones[origin:destination]
-        self.all_tags = self.all_tags[origin:destination]
-
-
-    def set_valid_rectangles(self, indexes):
-        # This if is just for efficiency
-        if not indexes:
-            self.zones = []
-            self.all_tags = []
-            return
-
-        for i in range(len(self.zones)):
-            if i not in indexes:
-                self.zones.pop(i)
-                self.all_tags.pop(i)
-
-
-    def draw(self, frame):
-        new_frame = select_multiple_zones(
-            frame,
-            self.zones,
-            all_tags=self.all_tags,
-            alpha=self.alpha,
-            color=self.color,
-            normalized=self.normalized,
-            thickness=self.thickness,
-            filled=self.filled,
-            peephole=self.peephole,
-            margin=self.margin)
-        return new_frame
-
 
 def eprint(*args, **kwargs):
-    print(*args, file=sys.stderr, **kwargs)
+    if not IGNORE_ERRORS:
+        print(*args, file=sys.stderr, **kwargs)
 
 
 def get_lighter_color(color):
@@ -236,10 +161,8 @@ def add_tags(frame, position, tags, tag_position=None, alpha=0.75, color=(20, 20
     else:
         valid = ['bottom_right', 'bottom_left', 'inside', 'top']
         if tag_position not in ['bottom_right', 'bottom_left', 'inside', 'top']:
-            if not IGNORE_ERRORS:
-                raise ValueError('Error, invalid tag_position ({}) must be in: {}'.format(tag_position, valid))
-            else:
-                tag_position = 'bottom_right'
+            eprint('Error, invalid tag_position ({}) must be in: {}'.format(tag_position, valid))
+            tag_position = 'bottom_right'
 
     # Add triangle to know to whom each tag belongs
     if tag_position == 'bottom_right':
@@ -376,31 +299,34 @@ def adjust_position(shape, position, normalized=False, thickness=0):
         position.y2 *= f_height
 
     if position.x1 < 0 or position.x1 > f_width:
-        if not IGNORE_ERRORS:
-            raise ValueError('Error: x1 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(x1, 0, f_width))
-        else:
-            position.x1 = min(max(position.x1,0),f_width)
+        eprint('Error: x1 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(position.x1, 0, f_width))
+        position.x1 = min(max(position.x1,0),f_width)
+
     if position.x2 < 0 or position.x2 > f_width:
-        if not IGNORE_ERRORS:
-            raise ValueError('Error: x2 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(x2, 0, f_width))
-        else:
-            position.x2 = min(max(position.x2,0),f_width)
+        eprint('Error: x2 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(position.x2, 0, f_width))
+        position.x2 = min(max(position.x2,0),f_width)
+
     if position.y1 < 0 or position.y1 > f_height:
-        if not IGNORE_ERRORS:
-            raise ValueError('Error: y1 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(y1, 0, f_height))
-        else:
-            position.y1 = min(max(position.y1,0),f_height)
+        eprint('Error: y1 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(position.y1, 0, f_height))
+        position.y1 = min(max(position.y1,0),f_height)
+
     if position.y2 < 0 or position.y2 > f_height:
-        if not IGNORE_ERRORS:
-            raise ValueError('Error: y2 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(y2, 0, f_height))
-        else:
-            position.y2 = min(max(position.y2,0),f_height)
+        eprint('Error: y2 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(position.y2, 0, f_height))
+        position.y2 = min(max(position.y2,0),f_height)
+
     # Auto adjust the limits of the selected zone
     position.x2 = int(min(max(position.x2, thickness*2), f_width - thickness))
     position.y2 = int(min(max(position.y2, thickness*2), f_height - thickness))
     position.x1 = int(min(max(position.x1, thickness), position.x2 - thickness))
     position.y1 = int(min(max(position.y1, thickness), position.y2 - thickness))
     return position
+
+
+def select_polygon(frame, all_vertexes, color=(110,70,45), thickness=2, closed=False):
+    for vertexes in all_vertexes:
+        vertexes = np.array(vertexes)
+        cv2.polylines(frame, [vertexes], closed, get_lighter_color(color), thickness=thickness-1)
+    return frame
 
 
 def select_zone(frame, position, tags=[], tag_position=None, alpha=0.9, color=(110,70,45),
