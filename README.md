@@ -20,9 +20,9 @@ You can simply execute:
 
 Finally you can install the library with:
 
-`pip install opencv-draw-tools-fernaperg`
+`pip install cv2-tools`
 
-When you install `opencv-draw-tools`, it will automatically download `numpy` but not opencv becouse in some cases you will need another version.
+When you install `cv2-tools`, it will automatically download `numpy` but not opencv becouse in some cases you will need another version.
 
 ## Test
 
