@@ -1,4 +1,4 @@
-# opencv-draw-tools
+# cv2_tools
 Library to help the drawing process with OpenCV. Thought to add labels to the images. Classification of images, etc.
 
 ![image](https://user-images.githubusercontent.com/18369529/53686731-3dba0500-3d2b-11e9-95e5-e4517c013d14.png)
@@ -24,21 +24,70 @@ Finally you can install the library with:
 
 When you install `opencv-draw-tools`, it will automatically download `numpy` but not opencv becouse in some cases you will need another version.
 
-## Usage
-
-### Test
+## Test
 
 ```
-import opencv_draw_tools as cv2_tools
+import cv2_tools
 
 print('Name: {}\nVersion:{}\nHelp:{}'.format(cv2_tools.name,cv2_tools.__version__,cv2_tools.help))
-cv2_tools.webcam_test()
+webcam_test()
 ```
-### Oriented Object Programming method
+
+## Ussage and Important classes
+
+### ManagerCV2
+
+```
+from cv2_tools.Management import ManagerCV2
+```
+
+If you want to work with video or stream, this class will help you mantain your code cleaner while you get more features.
+
+For example:
+ - Open a a stream (your webcam).
+ - Reproduce it on real time with max FPS equals to 24.
+ - Press `esc` to finish the program.
+ - At the end print average FPS.
+
+```
+from cv2_tools.Managment import ManagerCV2
+import cv2
+
+# keystroke=27 is the button `esc`
+manager_cv2 = ManagerCV2(cv2.VideoCapture(0), is_stream=True, keystroke=27, wait_key=1, fps_limit=60)
+
+  # This for will manage file descriptor for you
+  for frame in manager_cv2:
+      cv2.imshow('Example easy manager', frame)
+  cv2.destroyAllWindows()
+  print(manager_cv2.get_fps())
+```
+
+If you want to use another button and you don't know the ID, you can check easily using the following code:
+
+```
+from cv2_tools.Managment import ManagerCV2
+import cv2
+
+# keystroke=27 is the button `esc`
+manager_cv2 = ManagerCV2(cv2.VideoCapture(0), is_stream=True, keystroke=27, wait_key=1, fps_limit=60)
+
+  # This for will manage file descriptor for you
+  for frame in manager_cv2:
+      # Each time you press a button, you will get its id in your terminal
+      last_keystroke = manager_cv2.get_last_keystroke()
+      if last_keystroke != -1:
+        print(last_keystroke)
+      cv2.imshow('Easy button checker', frame)
+  cv2.destroyAllWindows()
+```
+
+### SelectorCV2
 
 Firstly create a SelectorCV2 object. You can pass it optional parameters to configure the output.
 ```
-selector = cv2_tools.SelectorCV2(color=(200,90,0), filled=True)
+from cv2_tools.Selection import SelectorCV2
+selector = SelectorCV2(color=(200,90,0), filled=True)
 ```
 
 Also you can configure it later using the method (all optional parameters):
@@ -81,69 +130,3 @@ set_valid_rectangles(indexes)
 ```
 
 If you want, you can see the example [detect_faces.py](examples/detect_faces.py), it also use an open source library called `face_recognition`.
-
-
-### Manual method
-
-```
-import opencv_draw_tools as cv2_tools
-
-
-"""
-  Draw better rectangles to select zones.
-  Keyword arguments:
-  frame -- opencv frame object where you want to draw
-  position -- touple with 4 elements (x1, y1, x2, y2)
-              This elements must be between 0 and 1 in case it is normalized
-              or between 0 and frame height/width.
-  tags -- list of strings/tags you want to associate to the selected zone (default [])
-  tag_position -- position where you want to add the tags, relatively to the selected zone (default None)
-                  If None provided it will auto select the zone where it fits better:
-                      - First try to put the text on the Bottom Rigth corner
-                      - If it doesn't fit, try to put the text on the Bottom Left corner
-                      - If it doesn't fit, try to put the text Inside the rectangle
-                      - Finally if it doesn't fit, try to put the text On top of the rectangle
-  alpha -- transparency of the selected zone on the image (default 0.9)
-           1 means totally visible and 0 totally invisible
-  color -- color of the selected zone, touple with 3 elements BGR (default (110,70,45) -> dark blue)
-           BGR = Blue - Green - Red
-  normalized -- boolean parameter, if True, position provided normalized (between 0 and 1) else you should provide concrete values (default False)
-  thickness -- thickness of the drawing in pixels (default 2)
-  filled -- boolean parameter, if True, will draw a filled rectangle with one-third opacity compared to the rectangle (default False)
-  peephole -- boolean parameter, if True, also draw additional effect, so it looks like a peephole
-"""
-frame = cv2_tools.select_zone(frame, position, tags=[])
-```
-
-### Example with Webcam
-
-```
-import opencv_draw_tools as cv2_tools
-cv2_tools.webcam_test()
-```
-
-See `webcam_test()` code:
-
-```
-def webcam_test():
-    """Reproduce Webcam in real time with a selected zone."""
-    print('Launching webcam test')
-    cap = cv2.VideoCapture(0)
-    f_width = cap.get(3)
-    f_height = cap.get(4)
-    window_name = 'opencv_draw_tools'
-    while True:
-        ret, frame = cap.read()
-        frame = cv2.flip(frame, 1)
-        if ret:
-            keystroke = cv2.waitKey(1)
-            position = (0.33,0.2,0.66,0.8)
-            tags = ['MIT License', '(C) Copyright\n    Fernando\n    Perez\n    Gutierrez']
-            frame = select_zone(frame, position, tags=tags, color=(130,58,14), thickness=2, filled=True, normalized=True)
-            cv2.imshow(window_name, frame)
-            # True if escape 'esc' is pressed
-            if keystroke == 27:
-                break
-    cv2.destroyAllWindows()
-    cv2.VideoCapture(0).release()
-```
