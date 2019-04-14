@@ -4,8 +4,8 @@ with open('README.md', 'r') as readme:
     long_description = readme.read()
 
 setuptools.setup(
-    name='opencv-draw-tools-fernaperg',
-    version='1.2.0',
+    name='cv2_tools',
+    version='2.0.0',
     author='Fernando Pérez',
     author_email='fernaperg@gmail.com',
     description='Library to help the drawing process with OpenCV. Thought to add labels to the images. Classification of images, etc.',
