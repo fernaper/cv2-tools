@@ -1,6 +1,6 @@
 # MIT License
 # Copyright (c) 2019 Fernando Perez
-from cv2_tools.Managment import ManagerCV2
+from cv2_tools.Management import ManagerCV2
 import cv2
 
 

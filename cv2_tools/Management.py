@@ -36,11 +36,11 @@ class ManagerCV2():
         self.final_time = time.time()
 
         if self.is_stream:
-            for i in range(_tries_reconnect_stream):
+            for i in range(ManagerCV2._tries_reconnect_stream):
                 ret, frame = self.video.read()
                 if ret:
                     break
-                if i+1 == _tries_reconnect_stream:
+                if i+1 == ManagerCV2._tries_reconnect_stream:
                     self.end_iteration()
         elif not ret:
                 self.end_iteration()
