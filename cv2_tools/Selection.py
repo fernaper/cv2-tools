@@ -4,13 +4,6 @@ import cv2
 
 from cv2_tools.utils import *
 
-"""
-    You can change it.
-    If IGNORE_ERRORS are True, opencv_draw_tools tried to solve the problems or
-    conflictive cases by himself.
-    Recommended: False
-"""
-IGNORE_ERRORS = False
 
 # TODO: Document SelectorCV2
 class SelectorCV2():

@@ -7,6 +7,15 @@ import cv2
 from cv2_tools.tags_constraint import *
 
 
+"""
+    You can change it.
+    If IGNORE_ERRORS are True, opencv_draw_tools tried to solve the problems or
+    conflictive cases by himself.
+    Recommended: False
+"""
+IGNORE_ERRORS = False
+
+
 def eprint(*args, **kwargs):
     if not IGNORE_ERRORS:
         print(*args, file=sys.stderr, **kwargs)
