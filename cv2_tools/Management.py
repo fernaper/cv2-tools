@@ -8,16 +8,25 @@ class ManagerCV2():
 
     _tries_reconnect_stream = 10
 
-    def __init__(self, video, is_stream=False, keystroke=-1, wait_key=-1, fps_limit=0):
+    def __init__(self, video, is_stream=False, fps_limit=0):
         self.video = video
         self.is_stream = is_stream
         self.stream = video
         self.fps_limit = fps_limit
 
-        self.keystroke = keystroke
-        self.wait_key = wait_key
-
         self.last_keystroke = -1
+        self.keystroke_manager = {
+            # The first three elements will have allways the same length
+            'keystroke':[],
+            'wait_key':[],
+            'keystroke_handler':[],
+            'keystroke_args':[],
+            'exit_keystrokes':[],
+        }
+
+        self.ret_handler = None
+        self.ret_handler_args = ()
+
         self.initial_time = None
         self.final_time = None
         self.count_frames = 0
@@ -45,10 +54,15 @@ class ManagerCV2():
         elif not ret:
                 self.end_iteration()
 
-        if self.wait_key != -1:
-            self.last_keystroke = cv2.waitKey(self.wait_key)
-            if self.last_keystroke == self.keystroke:
-                self.end_iteration()
+        for i, wait_key in enumerate(self.keystroke_manager['wait_key']):
+            self.last_keystroke = cv2.waitKey(wait_key)
+
+            if self.last_keystroke in self.keystroke_manager['keystroke']:
+                index = self.keystroke_manager['keystroke'].index(self.last_keystroke)
+
+                self.keystroke_manager['keystroke_handler'][index](*self.keystroke_manager['keystroke_args'][index])
+                if self.last_keystroke in self.keystroke_manager['exit_keystrokes']:
+                    self.end_iteration()
 
         self.count_frames += 1
 
@@ -62,12 +76,28 @@ class ManagerCV2():
         return frame
 
 
+    def set_ret_handler(self, method, *args):
+        self.ret_handler = method
+        self.ret_handler_args = args
+
+
+    def add_keystroke(self, keystroke, wait_key, method, *args, exit=False):
+        self.keystroke_manager['keystroke'].append(keystroke)
+        self.keystroke_manager['wait_key'].append(wait_key)
+        self.keystroke_manager['keystroke_handler'].append(method)
+        self.keystroke_manager['keystroke_args'].append(args)
+        if exit:
+            self.keystroke_manager['exit_keystrokes'].append(keystroke)
+
+
     def get_last_keystroke(self):
         return self.last_keystroke
 
 
-    def end_iteration(self):
+    def end_iteration(self, *args):
         self.video.release()
+        if self.ret_handler:
+            self.ret_handler(*self.ret_handler_args)
         raise StopIteration
 
 
