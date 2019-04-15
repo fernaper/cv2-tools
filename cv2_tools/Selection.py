@@ -2,7 +2,7 @@
 # Copyright (c) 2019 Fernando Perez
 import cv2
 
-from cv2_tools.utils import *
+from cv2_tools.Utils import *
 
 
 # TODO: Document SelectorCV2

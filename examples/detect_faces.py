@@ -26,13 +26,14 @@ def face_detector(frame, scale=0.25):
 
 
 def main():
-    manager_cv2 = ManagerCV2(cv2.VideoCapture(0), is_stream=True, keystroke=27, wait_key=1)
+    manager_cv2 = ManagerCV2(cv2.VideoCapture(0), is_stream=True)
+    manager_cv2.add_keystroke(27, 1, print, 'Pressed esc. Exiting', exit=True)
     for frame in manager_cv2:
         frame = cv2.flip(frame, 1)
         keystroke = cv2.waitKey(1)
         frame = face_detector(frame, 0.5)
         cv2.imshow('Example face_recognition', frame)
-    print(manager_cv2.get_fps())
+    print('FPS: {}'.format(manager_cv2.get_fps()))
     cv2.destroyAllWindows()
 
 if __name__ == '__main__':
