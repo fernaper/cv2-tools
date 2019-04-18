@@ -329,6 +329,14 @@ def select_polygon(frame, all_vertexes, color=(110,70,45), thickness=2, closed=F
     return frame
 
 
+def select_zone_dict(frame, position, tags=[],tag_position=None, normalized=False, margin=5, thickness=2, other_parameters={}):
+    return select_zone(frame, position, tags, tag_position=tag_position,
+            alpha=other_parameters['alpha'], color=other_parameters['color'],
+            normalized=normalized, thickness=thickness,
+            filled=other_parameters['filled'], peephole=other_parameters['peephole'],
+            margin=margin)
+
+
 def select_zone(frame, position, tags=[], tag_position=None, alpha=0.9, color=(110,70,45),
                 normalized=False, thickness=2, filled=False, peephole=True, margin=5):
     """Draw better rectangles to select zones.
@@ -380,7 +388,8 @@ def select_zone(frame, position, tags=[], tag_position=None, alpha=0.9, color=(1
 
 
 def select_multiple_zones(frame, all_selected_zones, all_tags=None, alpha=0.9, color=(110,70,45),
-                normalized=False, thickness=2, filled=False, peephole=True, margin=5):
+                normalized=False, thickness=2, filled=False, peephole=True, margin=5,
+                especific_properties={}):
     """Draw better rectangles to select multiple zones at the same time.
     It will put tags to the rectangles as better as possible, avoiding (if it is possible) overwritten information.
 
@@ -407,25 +416,49 @@ def select_multiple_zones(frame, all_selected_zones, all_tags=None, alpha=0.9, c
     A new drawed Frame
 
     """
-    all_selected_zones = [adjust_position(frame.shape[:2], Rectangle(zone[0],zone[1],zone[2],zone[3]), normalized=normalized, thickness=thickness) for zone in all_selected_zones]
-    if not all_tags:
-        for zone in all_selected_zones:
-            frame = select_zone(frame, zone, alpha=alpha, color=color, normalized=normalized,
-                                thickness=thickness, filled=filled, peephole=peephole)
-    else:
-        f_height, f_width = frame.shape[:2]
-        all_tags_shapes = []
+    all_selected_zones = [adjust_position(frame.shape[:2],
+                              Rectangle(zone[0],zone[1],zone[2],zone[3]),
+                              normalized=normalized, thickness=thickness)
+                          for zone in all_selected_zones]
+
+    f_height, f_width = frame.shape[:2]
+    all_tags_shapes = []
+    best_position = []
+
+    if all_tags:
         for i, zone in enumerate(all_selected_zones):
             all_tags_shapes.append(get_shape_tags(zone, all_tags[i], margin=margin))
-        # Here you could pass the frame if you want to see where get_possible_positions thinks the tags will be.           Just: frame=frame     \/
-        best_position = get_possible_positions(f_width, f_height, all_selected_zones, all_tags_shapes, margin=margin, frame=[])
-        for i, zone in enumerate(all_selected_zones):
-            if best_position:
-                position = best_position[i]
-            else:
-                position = None
-            frame = select_zone(frame, zone, tags=all_tags[i], tag_position=position, alpha=alpha, color=color,
-                                thickness=thickness, filled=filled, peephole=peephole, margin=margin)
+        # Here you could pass the frame if you want to see where get_possible_positions
+        # thinks the tags will be.           Just: frame=frame     \/
+        best_position = get_possible_positions(f_width, f_height, all_selected_zones,
+                        all_tags_shapes, margin=margin, frame=[])
+
+    for i, zone in enumerate(all_selected_zones):
+        tags = None
+        positon = None
+
+        # if all_tags then best_position also have values
+        if all_tags:
+            tags = all_tags[i]
+            position = best_position[i]
+
+        if i in especific_properties:
+            if 'alpha' not in especific_properties[i]:
+                especific_properties[i]['alpha'] = alpha
+            if 'color' not in especific_properties[i]:
+                especific_properties[i]['color'] = color
+            if 'filled' not in especific_properties[i]:
+                especific_properties[i]['filled'] = filled
+            if 'peephole' not in especific_properties[i]:
+                especific_properties[i]['peephole'] = peephole
+
+            frame = select_zone_dict(frame,zone, tags=tags,tag_position=position,
+                    normalized=normalized,margin=margin, thickness=thickness,
+                    other_parameters=especific_properties[i])
+        else:
+            frame = select_zone(frame, zone, tags=tags, tag_position=position,
+                    alpha=alpha, color=color, thickness=thickness, filled=filled,
+                    peephole=peephole, margin=margin)
     return frame
 
 
