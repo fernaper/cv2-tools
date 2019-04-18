@@ -31,7 +31,7 @@ class SelectorCV2():
         #   'peephole': peephole,
         # }
         # If someone is set to None or does not exist, this parameter is also set to default
-        self.especific_properties = {}
+        self.specific_properties = {}
 
 
     def set_properties(self, alpha=None, color=None, normalized=None,
@@ -53,7 +53,7 @@ class SelectorCV2():
             self.margin = margin
 
 
-    def add_zone(self, zone, tags=None, especific_properties={}):
+    def add_zone(self, zone, tags=None, specific_properties={}):
         self.zones.append(zone)
         if tags and type(tags) is not list:
             tags = [tags]
@@ -61,13 +61,13 @@ class SelectorCV2():
             tags = []
         self.all_tags.append(tags)
 
-        # Add especific_properties if there are someone
-        if especific_properties:
+        # Add specific_properties if there are someone
+        if specific_properties:
             index = len(self.zones)-1
-            self.especific_properties[index] = {}
+            self.specific_properties[index] = {}
             for attribute in ['alpha', 'color', 'filled', 'peephole']:
-                if attribute in especific_properties:
-                    self.especific_properties[index][attribute] = especific_properties[attribute]
+                if attribute in specific_properties:
+                    self.specific_properties[index][attribute] = specific_properties[attribute]
 
 
     def add_polygon(self, polygon, surrounding_box=False, tags=None):
@@ -127,7 +127,7 @@ class SelectorCV2():
             filled=self.filled,
             peephole=self.peephole,
             margin=self.margin,
-            especific_properties=self.especific_properties)
+            specific_properties=self.specific_properties)
 
         next_frame = select_polygon(
             next_frame,

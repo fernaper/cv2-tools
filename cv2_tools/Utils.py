@@ -389,7 +389,7 @@ def select_zone(frame, position, tags=[], tag_position=None, alpha=0.9, color=(1
 
 def select_multiple_zones(frame, all_selected_zones, all_tags=None, alpha=0.9, color=(110,70,45),
                 normalized=False, thickness=2, filled=False, peephole=True, margin=5,
-                especific_properties={}):
+                specific_properties={}):
     """Draw better rectangles to select multiple zones at the same time.
     It will put tags to the rectangles as better as possible, avoiding (if it is possible) overwritten information.
 
@@ -442,19 +442,19 @@ def select_multiple_zones(frame, all_selected_zones, all_tags=None, alpha=0.9, c
             tags = all_tags[i]
             position = best_position[i]
 
-        if i in especific_properties:
-            if 'alpha' not in especific_properties[i]:
-                especific_properties[i]['alpha'] = alpha
-            if 'color' not in especific_properties[i]:
-                especific_properties[i]['color'] = color
-            if 'filled' not in especific_properties[i]:
-                especific_properties[i]['filled'] = filled
-            if 'peephole' not in especific_properties[i]:
-                especific_properties[i]['peephole'] = peephole
+        if i in specific_properties:
+            if 'alpha' not in specific_properties[i]:
+                specific_properties[i]['alpha'] = alpha
+            if 'color' not in specific_properties[i]:
+                specific_properties[i]['color'] = color
+            if 'filled' not in specific_properties[i]:
+                specific_properties[i]['filled'] = filled
+            if 'peephole' not in specific_properties[i]:
+                specific_properties[i]['peephole'] = peephole
 
             frame = select_zone_dict(frame,zone, tags=tags,tag_position=position,
                     normalized=normalized,margin=margin, thickness=thickness,
-                    other_parameters=especific_properties[i])
+                    other_parameters=specific_properties[i])
         else:
             frame = select_zone(frame, zone, tags=tags, tag_position=position,
                     alpha=alpha, color=color, thickness=thickness, filled=filled,
