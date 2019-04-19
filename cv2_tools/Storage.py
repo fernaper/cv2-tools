@@ -113,7 +113,7 @@ class StorageCV2():
         """  StorageCV2 constructor.
 
         Keyword arguments:
-        path -- Path with the compressed json to load
+        path -- Path with the compressed json to load. (default '')
         """
         self.complete_structure = {}
         if path:

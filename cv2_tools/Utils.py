@@ -161,7 +161,7 @@ def add_tags(frame, position, tags, tag_position=None, alpha=0.75, color=(20, 20
     else:
         valid = ['bottom_right', 'bottom_left', 'inside', 'top']
         if tag_position not in ['bottom_right', 'bottom_left', 'inside', 'top']:
-            eprint('Error, invalid tag_position ({}) must be in: {}'.format(tag_position, valid))
+            eprint('Warning, invalid tag_position ({}) must be in: {}'.format(tag_position, valid))
             tag_position = 'bottom_right'
 
     # Add triangle to know to whom each tag belongs
@@ -299,19 +299,19 @@ def adjust_position(shape, position, normalized=False, thickness=0):
         position.y2 *= f_height
 
     if position.x1 < 0 or position.x1 > f_width:
-        eprint('Error: x1 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(position.x1, 0, f_width))
+        eprint('Warning: x1 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(position.x1, 0, f_width))
         position.x1 = min(max(position.x1,0),f_width)
 
     if position.x2 < 0 or position.x2 > f_width:
-        eprint('Error: x2 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(position.x2, 0, f_width))
+        eprint('Warning: x2 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(position.x2, 0, f_width))
         position.x2 = min(max(position.x2,0),f_width)
 
     if position.y1 < 0 or position.y1 > f_height:
-        eprint('Error: y1 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(position.y1, 0, f_height))
+        eprint('Warning: y1 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(position.y1, 0, f_height))
         position.y1 = min(max(position.y1,0),f_height)
 
     if position.y2 < 0 or position.y2 > f_height:
-        eprint('Error: y2 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(position.y2, 0, f_height))
+        eprint('Warning: y2 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(position.y2, 0, f_height))
         position.y2 = min(max(position.y2,0),f_height)
 
     # Auto adjust the limits of the selected zone
@@ -322,7 +322,48 @@ def adjust_position(shape, position, normalized=False, thickness=0):
     return position
 
 
-def select_polygon(frame, all_vertexes, color=(110,70,45), thickness=2, closed=False):
+def adjust_polygon(shape, point, normalized=False, thickness=0):
+    """Auxiliar Method: Adjust provided position to select_zone.
+
+    Keyword arguments:
+    shape -- touple with 2 elements (height, width)
+             this information should be the height and width of the frame.
+    point -- tuple with x and y coordinates (x1, y1)
+             This elements must be between 0 and 1 in case it is normalized
+             or between 0 and frame height/width.
+    normalized -- boolean parameter, if True, position provided normalized (between 0 and 1)
+                  else you shold provide concrete values (default False)
+    thickness -- thickness of the drawing in pixels (default 0)
+
+    Return:
+    A new point with all the adjustments
+
+    """
+    f_height, f_width = shape
+    x1, y1 = point
+    if normalized:
+        x1 *= f_width
+        y1 *= f_height
+
+    if x1 < 0 or x1 > f_width:
+        eprint('Warning: x1 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(x1, 0, f_width))
+        x1 = min(max(x1,0),f_width)
+
+    if y1 < 0 or y1 > f_height:
+        eprint('Warning: y1 = {}; Value must be between {} and {}. If normalized between 0 and 1.'.format(y1, 0, f_height))
+        y1 = min(max(y1,0),f_height)
+
+
+    # Auto adjust the limits of the selected zone
+    x1 = int(min(max(x1, thickness), x2 - thickness))
+    y1 = int(min(max(y1, thickness), y2 - thickness))
+    return (x1, y1)
+
+
+def select_polygon(frame, all_vertexes, normalized=False, color=(110,70,45), thickness=2, closed=False):
+    if normalized:
+        all_vertexes = [adjust_polygon(frame.shape[:2], vertex, normalized=True, thickness=thickness) for vertex in all_vertexes]
+
     for vertexes in all_vertexes:
         vertexes = np.array(vertexes)
         cv2.polylines(frame, [vertexes], closed, get_lighter_color(color), thickness=thickness-1)

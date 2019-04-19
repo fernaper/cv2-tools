@@ -28,11 +28,13 @@ class ManagerCV2():
 
         Keyword arguments:
         is_stream -- Bool to indicate if it is an stream or not.
-                 It is not necessarily to set it to True if you are using an stream.
+                 It is not necessary to set it to True if you are using an stream.
                  It is only for managing streams issuess.
-                 In a stream it is possible to lose frames, so, if you set is_stream
+                 On a stream it is possible to lose frames, so, if you set is_stream
                  to True, it will try to reconnect the stream as many times as
-                 `ManagerCV2._tries_reconnect_stream` indicates.
+                 `ManagerCV2._tries_reconnect_stream` indicates. (Default: False)
+        fps_limit -- You can set with it the maximum FPS of the video. If you
+                     set it to 0, it means no limit. (Default: 0)
         """
         # Video/Stream managment attributes
         self.video = video
@@ -128,9 +130,9 @@ class ManagerCV2():
         waitkey -- Ms to wait key (it works exactly as cv2.waitKey)
         method -- Method to execute
         args -- Arguments to pass to the method
-        kwargs -- Keyword argoments to pass to the method
+        kwargs -- Keyword arguments to pass to the method
                   Note that this method can receive and exit param (you
-                  cant't pass a param with the same name to your own method)
+                  can't pass a param with the same name to your own method)
         """
         exit = False
         if 'exit' in kwargs:
