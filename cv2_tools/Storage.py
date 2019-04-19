@@ -1,3 +1,5 @@
+# MIT License
+# Copyright (c) 2019 Fernando Perez
 from cv2_tools.Selection import SelectorCV2
 import cv2_tools
 
@@ -5,85 +7,114 @@ import base64
 import zlib
 import json
 
-"""
-Json structure:
-
-{
-    'default_parameters': {
-        'alpha': alpha,
-        'color': color,
-        'filled': filled,
-        'peephole': peephole,
-        'normalized': normalized,
-        'thickness': thickness,
-        'margin': margin,
-        'closed_polygon': closed_polygon
-    },
-    'frames': [
-        {
-            'zones':[[x1,x2,y1,y2],...],
-            'all_tags':[['text',...],...],,
-            'polygon_zones': [
-                [(x,y),..],
-                ...
-            ],
-            'specific_properties': {
-                {
-                    0: {
-                        'alpha':alpha,
-                        'color':color,
-                        'filled':filled,
-                        'peephole':peephole
-                    },
-                    ...
-                }
-            }
-        },
-        ...
-    ]
-
-}
-"""
-
-def json_zip(j):
+def json_zip(original_dict):
+    """ Internal function. It receives a dict and generates a comppressed dict with metadata"""
     return {
         'meta':{
             'cv2_tools-version':cv2_tools.__version__
         },
         'b64_data': base64.b64encode(
             zlib.compress(
-                json.dumps(j).encode('utf-8')
+                json.dumps(original_dict).encode('utf-8')
             )
         ).decode('ascii'),
     }
 
 
-def json_unzip(j, insist=True):
+def json_unzip(compressed_dict, insist=True):
+    """ Internal function. It receives a compressed dict and returns the original one."""
     try:
-        assert (j['b64_data'])
+        assert (compressed_dict['b64_data'])
     except:
         if insist:
             raise RuntimeError("JSON not in the expected format {'b64_data': zipstring}")
         else:
-            return j
+            return compressed_dict
 
     try:
-        j = zlib.decompress(base64.b64decode(j['b64_data']))
+        compressed_dict = zlib.decompress(base64.b64decode(compressed_dict['b64_data']))
     except:
         raise RuntimeError("Could not decode/unzip the contents")
 
     try:
-        j = json.loads(j)
+        compressed_dict = json.loads(compressed_dict)
     except:
         raise RuntimeError("Could interpret the unzipped contents")
 
     return j
 
 
+# TODO: Make it possible to process half of a video in the first time, and
+# reproduce the first half and process and save the second one
 class StorageCV2():
+    """ StorageCV2 helps to save and load previous selections.
+
+    Some times, your detection process can't go on real time, but you want to
+    reproduce it at an stable amount of FPS, or you can try to avoid expensive
+    API calls when you're processing the same video again.
+
+    This is exactly why this class exists. With it you can make it works in
+    synergy with SelectorCV2 to save and load previous process.
+
+    The data stored in the file is practically as required and a post-compression
+    is carried out.
+
+    Json data structure (before comppression):
+
+    {
+        'default_parameters': {
+            'alpha': alpha,
+            'color': color,
+            'filled': filled,
+            'peephole': peephole,
+            'normalized': normalized,
+            'thickness': thickness,
+            'margin': margin,
+            'closed_polygon': closed_polygon
+        },
+        'frames': [
+            {
+                'zones':[[x1,x2,y1,y2],...],
+                'all_tags':[['text',...],...],,
+                'polygon_zones': [
+                    [(x,y),..],
+                    ...
+                ],
+                'specific_properties': {
+                    {
+                        0: {
+                            'alpha':alpha,
+                            'color':color,
+                            'filled':filled,
+                            'peephole':peephole
+                        },
+                        ...
+                    }
+                }
+            },
+            ...
+        ]
+
+    }
+
+    Json data structure (after compression):
+
+    {
+        'meta':{
+            'cv2_tools-version':cv2_tools.__version__
+        },
+        'b64_data': comprressed data
+    }
+
+    """
 
 
     def __init__(self, path=''):
+        """  StorageCV2 constructor.
+
+        Keyword arguments:
+        path -- Path with the compressed json to load
+        """
         self.complete_structure = {}
         if path:
             self.load_from_file(path)
@@ -123,6 +154,8 @@ class StorageCV2():
 
 
     def load_from_selector(self, selector):
+        """ Internal method to initial data from SelectorCV2"""
+
         self.complete_structure = {
             'default_parameters': {
                 'alpha': selector.alpha,
@@ -139,6 +172,12 @@ class StorageCV2():
 
 
     def add_frame(self, selector):
+        """ Method to add last frame selection
+
+        Arguments:
+        selector -- SelectorCV2 object with the last frame information
+        """
+
         # If it is the first call
         if not self.complete_structure:
             self.load_from_selector(selector)
@@ -156,6 +195,8 @@ class StorageCV2():
 
 
     def load_from_file(self, path):
+        """ Internal method to load data from file(path)"""
+
         with open(path) as json_file:
             self.complete_structure = json_unzip(json.load(json_file))
 
@@ -168,5 +209,7 @@ class StorageCV2():
 
 
     def save(self, path):
+        """ Method to save the necessari data (compressed) into file (path)"""
+
         with open(path, 'w') as outfile:
             json.dump(json_zip(self.complete_structure), outfile)
