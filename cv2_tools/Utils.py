@@ -36,8 +36,7 @@ def get_lighter_color(color):
     return (color[0] + add, color[1] + add, color[2] + add)
 
 
-def get_shape_tags(position, tags, margin=5,
-                   font_info=(cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.75, (255,255,255), 1)):
+def get_shape_tags(position, tags, font_info=(cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.75, (255,255,255), 1)):
     """Get information about how much the list of tags will occupy (width and height)
     with the current configuration.
 
@@ -45,7 +44,6 @@ def get_shape_tags(position, tags, margin=5,
     position -- object of type Rectangle with 4 attributes (x1, y1, x2, y2)
                 This elements must be between 0 and frame height/width.
     tags -- list of strings/tags you want to check shape.
-    margin -- extra margin in pixels to be separeted with the selected zone. (default 5)
     font_info -- touple with 4 elements (font, font_scale, font_color, thickness)
                  font -- opencv font (default cv2.FONT_HARSHEY_COMPLEX_SMALL)
                  font_scale -- scale of the fontm between 0 and 1 (default 0.75)
@@ -56,6 +54,7 @@ def get_shape_tags(position, tags, margin=5,
     Return shape of the given tags with the given font information
 
     """
+    margin = 5
     font, font_scale, font_color, thickness = font_info
 
     aux_tags = []
@@ -79,7 +78,7 @@ def get_shape_tags(position, tags, margin=5,
 
 
 def add_tags(frame, position, tags, tag_position=None, alpha=0.75, color=(20, 20, 20),
-             margin=5, font_info=(cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.75, (255,255,255), 1)):
+             font_info=(cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.75, (255,255,255), 1)):
     """Add tags to selected zone.
 
     It was originally intended as an auxiliary method to add details to the select_zone()
@@ -101,7 +100,6 @@ def add_tags(frame, position, tags, tag_position=None, alpha=0.75, color=(20, 20
              1 means totally visible and 0 totally invisible
     color -- color of the tags background, touple with 3 elements BGR (default (20,20,20) -> almost black)
              BGR = Blue - Green - Red
-    margin -- extra margin in pixels to be separeted with the selected zone (default 5)
     font_info -- touple with 4 elements (font, font_scale, font_color, thickness)
                  font -- opencv font (default cv2.FONT_HARSHEY_COMPLEX_SMALL)
                  font_scale -- scale of the fontm between 0 and 1 (default 0.75)
@@ -116,6 +114,7 @@ def add_tags(frame, position, tags, tag_position=None, alpha=0.75, color=(20, 20
     if not tags:
         return frame
 
+    margin = 5
     f_height, f_width = frame.shape[:2]
     font, font_scale, font_color, thickness = font_info
 
@@ -424,7 +423,7 @@ def select_zone(frame, position, tags=[], tag_position=None, alpha=0.9, color=(1
     cv2.rectangle(overlay, (position.x1, position.y1), (position.x2, position.y2), color,thickness=thickness)
     cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
 
-    frame = add_tags(frame, position, tags, tag_position=tag_position, margin=margin)
+    frame = add_tags(frame, position, tags, tag_position=tag_position)
     return frame
 
 
