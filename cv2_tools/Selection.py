@@ -9,7 +9,7 @@ class SelectorCV2():
     """ SelectorCV2 helps to select information in frames.
 
     This is the original idea of the library, being capable to select multiple
-    zones with enought intelligence to decide how to show as much information as
+    zones with enough intelligence to decide how to show as much information as
     possible without covering relevant data.
 
     It has two important functionalities:

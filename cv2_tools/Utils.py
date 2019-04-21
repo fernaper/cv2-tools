@@ -17,6 +17,7 @@ IGNORE_ERRORS = False
 
 
 def eprint(*args, **kwargs):
+    """Internal method to print into stderr"""
     if not IGNORE_ERRORS:
         print(*args, file=sys.stderr, **kwargs)
 
@@ -25,8 +26,8 @@ def get_lighter_color(color):
     """Generates a lighter color.
 
     Keyword arguments:
-    color -- color you want to change, touple with 3 elements BGR
-             BGR = Blue - Green - Red
+    color -- color you want to change, touple with 3 elements (Doesn't matter
+             if it is RGB or BGR)
     Return:
     Return a lighter version of the provided color
 
@@ -36,14 +37,14 @@ def get_lighter_color(color):
     return (color[0] + add, color[1] + add, color[2] + add)
 
 
-def get_shape_tags(position, tags, font_info=(cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.75, (255,255,255), 1)):
+def get_shape_tags(tags, font_info=(cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.75, (255,255,255), 1)):
     """Get information about how much the list of tags will occupy (width and height)
     with the current configuration.
 
-    Keyword arguments:
-    position -- object of type Rectangle with 4 attributes (x1, y1, x2, y2)
-                This elements must be between 0 and frame height/width.
+    Arguments:
     tags -- list of strings/tags you want to check shape.
+
+    Keyword arguments:
     font_info -- touple with 4 elements (font, font_scale, font_color, thickness)
                  font -- opencv font (default cv2.FONT_HARSHEY_COMPLEX_SMALL)
                  font_scale -- scale of the fontm between 0 and 1 (default 0.75)
@@ -84,12 +85,14 @@ def add_tags(frame, position, tags, tag_position=None, alpha=0.75, color=(20, 20
     It was originally intended as an auxiliary method to add details to the select_zone()
     method, however it can be used completely independently.
 
-    Keyword arguments:
+    Arguments:
     frame -- opencv frame object where you want to draw
     position -- object of type Rectangle with 4 attributes (x1, y1, x2, y2)
                 This elements must be between 0 and 1 in case it is normalized
                 or between 0 and frame height/width.
     tags -- list of strings/tags you want to associate to the selected zone.
+
+    Keyword arguments:
     tag_position -- position where you want to add the tags, relatively to the selected zone (default None)
                     If None provided it will auto select the zone where it fits better:
                         - First try to put the text on the Bottom Rigth corner
@@ -229,12 +232,14 @@ def add_peephole(frame, position, alpha=0.5, color=(110,70,45), thickness=2, lin
     It was originally intended as an auxiliary method to add details to the select_zone()
     method, however it can be used completely independently.
 
-    Keyword arguments:
+    Position:
     frame -- opencv frame object where you want to draw
     position -- object of type Rectangle with 4 attributes (x1, y1, x2, y2)
                 This elements must be between 0 and 1 in case it is normalized
                 or between 0 and frame height/width.
                 Outer rectangle on which the peephole is drawn.
+
+    Keyword arguments:
     alpha -- transparency of the selected zone on the image (default 0.5)
              1 means totally visible and 0 totally invisible
     color -- color of the selected zone, touple with 3 elements BGR (default (110,70,45) -> dark blue)
@@ -276,12 +281,14 @@ def add_peephole(frame, position, alpha=0.5, color=(110,70,45), thickness=2, lin
 def adjust_position(shape, position, normalized=False, thickness=0):
     """Auxiliar Method: Adjust provided position to select_zone.
 
-    Keyword arguments:
+    Arguments:
     shape -- touple with 2 elements (height, width)
              this information should be the height and width of the frame.
     position -- object of type Rectangle with 4 attributes (x1, y1, x2, y2)
                 This elements must be between 0 and 1 in case it is normalized
                 or between 0 and frame height/width.
+
+    Keyword arguments:
     normalized -- boolean parameter, if True, position provided normalized (between 0 and 1)
                   else you shold provide concrete values (default False)
     thickness -- thickness of the drawing in pixels (default 0)
@@ -324,12 +331,14 @@ def adjust_position(shape, position, normalized=False, thickness=0):
 def adjust_polygon(shape, point, normalized=False, thickness=0):
     """Auxiliar Method: Adjust provided position to select_zone.
 
-    Keyword arguments:
+    Arguments:
     shape -- touple with 2 elements (height, width)
              this information should be the height and width of the frame.
     point -- tuple with x and y coordinates (x1, y1)
              This elements must be between 0 and 1 in case it is normalized
              or between 0 and frame height/width.
+
+    Keyword arguments:
     normalized -- boolean parameter, if True, position provided normalized (between 0 and 1)
                   else you shold provide concrete values (default False)
     thickness -- thickness of the drawing in pixels (default 0)
@@ -360,6 +369,23 @@ def adjust_polygon(shape, point, normalized=False, thickness=0):
 
 
 def select_polygon(frame, all_vertexes, normalized=False, color=(110,70,45), thickness=2, closed=False):
+    """ Draw a polygon
+
+    Arguments:
+    frame -- opencv frame object where you want to draw
+    all_vertexes - List of touples (x,y) with all the vertex of the polygon
+
+    Keyword arguments:
+    normalized -- boolean parameter, if True, position provided normalized (between 0 and 1)
+                  else you shold provide concrete values (default False)
+    color -- color of the selected zone, touple with 3 elements BGR (default (110,70,45) -> dark blue)
+             BGR = Blue - Green - Red
+    thickness -- thickness of the drawing in pixels (default 0)
+    closed -- boolean value, if True, it will close the polygon (the first vertex with the final one)
+
+    Return:
+    A new point with all the adjustments
+    """
     if normalized:
         all_vertexes = [adjust_polygon(frame.shape[:2], vertex, normalized=True, thickness=thickness) for vertex in all_vertexes]
 
@@ -369,7 +395,43 @@ def select_polygon(frame, all_vertexes, normalized=False, color=(110,70,45), thi
     return frame
 
 
-def select_zone_dict(frame, position, tags=[],tag_position=None, normalized=False, margin=5, thickness=2, other_parameters={}):
+def select_zone_dict(frame, position, tags=[], tag_position=None, normalized=False, margin=5, thickness=2, other_parameters={}):
+    """ Draw better rectangles to select zones.
+
+    This is an alternative of select_zone. We use it in case we have specific
+    parameters to draw this zone.
+
+    Arguments:
+    frame -- opencv frame object where you want to draw
+    position -- object of type Rectangle with 4 attributes (x1, y1, x2, y2)
+                This elements must be between 0 and 1 in case it is normalized
+                or between 0 and frame height/width.
+
+    Keyword arguments:
+    tags -- list of strings/tags you want to associate to the selected zone (default [])
+    tag_position -- position where you want to add the tags, relatively to the selected zone (default None)
+                    If None provided it will auto select the zone where it fits better:
+                        - First try to put the text on the Bottom Rigth corner
+                        - If it doesn't fit, try to put the text on the Bottom Left corner
+                        - If it doesn't fit, try to put the text Inside the rectangle
+                        - Finally if it doesn't fit, try to put the text On top of the rectangle
+    normalized -- boolean parameter, if True, position provided normalized (between 0 and 1)
+                  else you shold provide concrete values (default False)
+    margin -- extra margin in pixels to be separeted with the selected zone (default 5)
+    thickness -- thickness of the drawing in pixels (default 0)
+    other_parameters -- dictionary with keys alpha, color, filled and peephole
+            alpha -- transparency of the selected zone on the image (default 0.9)
+                     1 means totally visible and 0 totally invisible
+            color -- color of the selected zone, touple with 3 elements BGR
+                    (default (110,70,45) -> dark blue) BGR = Blue - Green - Red
+            filled -- boolean parameter, if True, will draw a filled rectangle with
+                      one-third opacity compared to the rectangle (default False)
+            peephole -- boolean parameter, if True, also draw additional effect,
+                        to make it looks like a peephole
+
+    Return:
+    A new point with all the adjustments
+    """
     return select_zone(frame, position, tags, tag_position=tag_position,
             alpha=other_parameters['alpha'], color=other_parameters['color'],
             normalized=normalized, thickness=thickness,
@@ -381,11 +443,13 @@ def select_zone(frame, position, tags=[], tag_position=None, alpha=0.9, color=(1
                 normalized=False, thickness=2, filled=False, peephole=True, margin=5):
     """Draw better rectangles to select zones.
 
-    Keyword arguments:
+    Arguments:
     frame -- opencv frame object where you want to draw
     position -- object of type Rectangle with 4 attributes (x1, y1, x2, y2)
                 This elements must be between 0 and 1 in case it is normalized
                 or between 0 and frame height/width.
+
+    Keyword arguments:
     tags -- list of strings/tags you want to associate to the selected zone (default [])
     tag_position -- position where you want to add the tags, relatively to the selected zone (default None)
                     If None provided it will auto select the zone where it fits better:
@@ -433,11 +497,13 @@ def select_multiple_zones(frame, all_selected_zones, all_tags=None, alpha=0.9, c
     """Draw better rectangles to select multiple zones at the same time.
     It will put tags to the rectangles as better as possible, avoiding (if it is possible) overwritten information.
 
-    Keyword arguments:
+    Arguments:
     frame -- opencv frame object where you want to draw
     all_selected_zones -- list of touple with 4 elements (x1, y1, x2, y2)
                           This elements must be between 0 and 1 in case it is normalized
                           or between 0 and frame height/width in other case.
+
+    Keyword arguments:
     all_tags -- list of lists of strings/tags you want to associate to the selected zone.
                 The first element of the list is associated with the first element of all_selected_zones.
                 Therefore, both lists should have the same lenght. (default None)
@@ -467,7 +533,7 @@ def select_multiple_zones(frame, all_selected_zones, all_tags=None, alpha=0.9, c
 
     if all_tags:
         for i, zone in enumerate(all_selected_zones):
-            all_tags_shapes.append(get_shape_tags(zone, all_tags[i], margin=margin))
+            all_tags_shapes.append(get_shape_tags(all_tags[i]))
         # Here you could pass the frame if you want to see where get_possible_positions
         # thinks the tags will be.           Just: frame=frame     \/
         best_position = get_possible_positions(f_width, f_height, all_selected_zones,
@@ -502,6 +568,7 @@ def select_multiple_zones(frame, all_selected_zones, all_tags=None, alpha=0.9, c
     return frame
 
 
+# TODO: Update this method or remove it
 def webcam_test():
     """Reproduce Webcam in real time with a selected zone."""
     print('Launching webcam test')
@@ -538,6 +605,12 @@ def get_complete_help():
     * select_multiple_zones:
     {}
 
+    * select_zone_dict:
+    {}
+
+    * select_polygon:
+    {}
+
     * add_peephole:
     {}
 
@@ -557,9 +630,9 @@ def get_complete_help():
     * webcam_test:
     {}
 
-    '''.format(select_zone.__doc__, select_multiple_zones.__doc__, add_peephole.__doc__,
-               add_tags.__doc__, get_lighter_color.__doc__, adjust_position.__doc__,
-               webcam_test.__doc__)
+    '''.format(select_zone.__doc__, select_multiple_zones.__doc__, select_zone_dict.__doc__,
+               select_polygon.__doc__, add_peephole.__doc__, add_tags.__doc__,
+               get_lighter_color.__doc__, adjust_position.__doc__, webcam_test.__doc__)
 
 if __name__ == '__main__':
     webcam_test()

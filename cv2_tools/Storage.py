@@ -41,7 +41,7 @@ def json_unzip(compressed_dict, insist=True):
     except:
         raise RuntimeError("Could interpret the unzipped contents")
 
-    return j
+    return compressed_dict
 
 
 # TODO: Make it possible to process half of a video in the first time, and
