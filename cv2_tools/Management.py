@@ -1,7 +1,11 @@
 # MIT License
 # Copyright (c) 2019 Fernando Perez
+import numpy as np
 import time
 import cv2
+
+from queue import Queue
+from threading import Thread
 
 
 class ManagerCV2():
@@ -20,7 +24,7 @@ class ManagerCV2():
     _tries_reconnect_stream = 10
 
 
-    def __init__(self, video, is_stream=False, fps_limit=0):
+    def __init__(self, video, is_stream=False, fps_limit=0, queue_size=256):
         """  ManagerCV2 constructor.
 
         Arguments:
@@ -35,12 +39,18 @@ class ManagerCV2():
                  `ManagerCV2._tries_reconnect_stream` indicates. (Default: False)
         fps_limit -- You can set with it the maximum FPS of the video. If you
                      set it to 0, it means no limit. (Default: 0)
+        queue_size -- The maximum number of frames to store in the queue. (Default: 256)
         """
         # Video/Stream managment attributes
         self.video = video
         self.is_stream = is_stream
         self.stream = video
         self.fps_limit = fps_limit
+        self.queue_size = queue_size
+        self.stopped = False
+        self.queue = None
+        self.queue_thread = None
+        self.awake_thread = None
 
         # Keystrokes attributes
         self.last_keystroke = -1
@@ -68,23 +78,37 @@ class ManagerCV2():
         self.last_frame_time = self.initial_time
         self.count_frames = 0
         self.last_keystroke = -1
+
+        # All queue management
+        self.stopped = False
+        self.queue = Queue(maxsize=self.queue_size)
+        self.queue_awake = Queue(maxsize=1)
+
+        self.queue_thread = Thread(target=self.fill_queue, args=())
+        self.queue_thread.daemon = True
+        self.queue_thread.start()
         return self
 
 
     def __next__(self):
-        ret, frame = self.video.read()
+        # Get frame from queue if not stopped yet
+        if self.stopped:
+            self.end_iteration()
+
+        frame = self.queue.get()
+
+        # This is how it comunicates with the thread (to indicate it takes something)
+        if not self.queue_awake.full():
+            self.queue_awake.put(None)
+
+        # If we get a frame but it is None, it means that we finished the queue
+        if type(frame) == type(None):
+            self.end_iteration()
+
         self.final_time = time.time()
+        self.count_frames += 1
 
-        if self.is_stream:
-            for i in range(ManagerCV2._tries_reconnect_stream):
-                ret, frame = self.video.read()
-                if ret:
-                    break
-                if i+1 == ManagerCV2._tries_reconnect_stream:
-                    self.end_iteration()
-        elif not ret:
-                self.end_iteration()
-
+        # If they press one of the keystrokes, it will raise the method
         for i, wait_key in enumerate(self.keystroke_manager['wait_key']):
             self.last_keystroke = cv2.waitKey(wait_key)
 
@@ -97,8 +121,6 @@ class ManagerCV2():
                 if self.last_keystroke in self.keystroke_manager['exit_keystrokes']:
                     self.end_iteration()
 
-        self.count_frames += 1
-
         # Here we limit the speed (if we want constant frames)
         if self.fps_limit:
             time_to_sleep = (1 / self.fps_limit) - (time.time() - self.last_frame_time)
@@ -107,6 +129,39 @@ class ManagerCV2():
 
             self.last_frame_time = time.time()
         return frame
+
+
+    def fill_queue(self):
+        # keep looping infinitely
+        while True:
+            # If the thread indicator variable is set, stop the thread
+            if self.stopped:
+                return
+            if not self.queue.full():
+                ret, frame = self.video.read()
+                # If it is a streaming we will try to reconnect
+                if self.is_stream and not ret:
+                    exit = False
+                    for i in range(ManagerCV2._tries_reconnect_stream):
+                        ret, frame = self.video.read()
+                        if ret:
+                            break
+                        if i+1 == ManagerCV2._tries_reconnect_stream:
+                            self.stop_queue()
+                            return
+                elif not ret:
+                    self.stop_queue()
+                    return
+
+                self.queue.put(frame)
+            else:
+                # I want to wait until someone awake me
+                self.queue_awake.get()
+
+
+    def stop_queue(self):
+        self.stop_queue = True
+        self.queue.put(None)
 
 
     def set_ret_handler(self, method, *args, **kwargs):
@@ -155,6 +210,7 @@ class ManagerCV2():
 
     def end_iteration(self):
         """ Internal method to finish iteration, with the previous configuration"""
+        self.stopped = True
         self.video.release()
         if self.ret_handler:
             self.ret_handler(*self.ret_handler_args, **self.ret_handler_kwargs)

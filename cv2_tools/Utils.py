@@ -543,8 +543,8 @@ def select_multiple_zones(frame, all_selected_zones, all_tags=None, alpha=0.9, c
         tags = None
         positon = None
 
-        # if all_tags then best_position also have values
-        if all_tags:
+        # Im checking all of this stuff just in case
+        if all_tags and best_position and i < len(all_tags) and i < len(best_position):
             tags = all_tags[i]
             position = best_position[i]
 
