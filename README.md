@@ -1,9 +1,9 @@
 # cv2_tools
 Library to help the drawing process with OpenCV. Thought to add labels to the images. Classification of images, etc.
 
-![image](https://user-images.githubusercontent.com/18369529/53686731-3dba0500-3d2b-11e9-95e5-e4517c013d14.png)
+![cv2-tools](https://user-images.githubusercontent.com/18369529/56097027-839fe680-5eef-11e9-9c35-9d20f92b595e.png)
 
-**Image generated with Intel Openvino Toolkit and drawed with opencv-draw-tools v0.1.9**
+**Image generated with face_recognition and drawed with cv2-tools version 2.0.2**
 
 ## Installation
 
@@ -20,9 +20,9 @@ You can simply execute:
 
 Finally you can install the library with:
 
-`pip install opencv-draw-tools-fernaperg`
+`pip install cv2-tools`
 
-When you install `opencv-draw-tools`, it will automatically download `numpy` but not opencv becouse in some cases you will need another version.
+When you install `cv2-tools`, it will automatically download `numpy` but not opencv becouse in some cases you will need another version.
 
 ## Test
 
