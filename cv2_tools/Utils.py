@@ -562,6 +562,9 @@ def select_multiple_zones(frame, all_selected_zones, all_tags=None, alpha=0.9, c
                     normalized=normalized,margin=margin, thickness=thickness,
                     other_parameters=specific_properties[i])
         else:
+            # Quick fix for issue #50
+            if not 'position' in locals():
+                position = None
             frame = select_zone(frame, zone, tags=tags, tag_position=position,
                     alpha=alpha, color=color, thickness=thickness, filled=filled,
                     peephole=peephole, margin=margin)
