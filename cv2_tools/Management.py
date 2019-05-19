@@ -76,6 +76,7 @@ class ManagerCV2():
     def __iter__(self):
         self.initial_time = time.time()
         self.last_frame_time = self.initial_time
+        self.final_time = self.initial_time
         self.count_frames = 0
         self.last_keystroke = -1
 
