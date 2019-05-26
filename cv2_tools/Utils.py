@@ -9,11 +9,11 @@ from cv2_tools.tags_constraint import *
 
 """
     You can change it.
-    If IGNORE_ERRORS are True, opencv_draw_tools tried to solve the problems or
+    If IGNORE_ERRORS are True, cv2_tools tried to solve the problems or
     conflictive cases by himself.
     Recommended: False
 """
-IGNORE_ERRORS = False
+IGNORE_ERRORS = True
 
 
 def eprint(*args, **kwargs):
@@ -76,6 +76,32 @@ def get_shape_tags(tags, font_info=(cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.75, (255,2
         line_height = max(line_height, text_height + size[1] + margin)
 
     return (text_width + margin * 3, (margin + text_height)*(len(tags) - 1) + 2*text_height + margin*(len(tags)-1))
+
+
+def draw_free_tag(frame, coordinates, tags, alpha=0.75, color=(20,20,20),
+                  font_info=(cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.75, (255,255,255), 1)):
+    """Add tags to selected zone.
+
+    It was originally intended as an auxiliary method to add details to the select_zone()
+    method, however it can be used completely independently.
+
+    Arguments:
+    frame -- opencv frame object where you want to draw
+    coordinates -- touple of ints with (x1, y1)
+    tags -- string or list of strings you want to write.
+
+    Keyword arguments:
+    Same as add_tags. Check it.
+
+    Return:
+    A new drawed Frame
+
+    """
+    margin = 5
+    if type(tags) is str:
+        tags = [tags]
+    return add_tags(frame, Rectangle(coordinates[0]-margin, coordinates[1]-margin, coordinates[0], coordinates[1]),
+                    tags, tag_position='inside', alpha=alpha, color=color, font_info=font_info)
 
 
 def add_tags(frame, position, tags, tag_position=None, alpha=0.75, color=(20, 20, 20),

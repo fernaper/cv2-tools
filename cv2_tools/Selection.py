@@ -40,6 +40,7 @@ class SelectorCV2():
         self.zones = []
         self.polygon_zones = []
         self.all_tags = []
+        self.free_tags = []
         # Visual parameters: It is going to be all the default values
         self.alpha = alpha
         self.color = color
@@ -183,6 +184,19 @@ class SelectorCV2():
             self.all_tags.append(tags)
 
 
+    def add_free_tags(self, coordinates, tags):
+        """  Add tags not asociated with selections.
+
+        Arguments:
+        coordinates -- touple of two ints (x1,y1).
+        tags -- string or list of strings with all the tags to write.
+                It supports \n character.
+        """
+        if type(tags) == str:
+            tags = [tags]
+        self.free_tags.append({'coordinates':coordinates, 'tags':tags})
+
+
     def set_range_valid_rectangles(self, origin, destination):
         """ It is going to be proably a deprecated method """
         self.zones = self.zones[origin:destination]
@@ -204,22 +218,39 @@ class SelectorCV2():
                 self.all_tags.pop(i)
 
 
-    def draw(self, frame, fx=1, fy=1, interpolation=cv2.INTER_LINEAR):
+    def draw(self, frame, coordinates=(-1,-1), draw_tags=True, fx=1, fy=1, interpolation=cv2.INTER_LINEAR):
         """  Draw all selections.
 
         Arguments:
         frame -- opencv frame object where you want to draw
 
         Keyword arguments:
+        coordinates -- if indicated, the system will draw tags inside the selected
+                       coordinates. If not passed, the system will draw all the
+                       tags (default (-1,-1))
+        draw_tags -- boolean value, if false, the system won't draw any tag
+                     (default True)
         fx -- frame horizonal scale (default 1)
         fy -- frame vertical scale (default 1)
         interpolation -- cv2 default scaling algorithm (default cv2.INTER_LINEAR)
         """
 
+        if coordinates != (-1,-1):
+            all_tags = []
+            for zone, tags in zip(self.zones, self.all_tags):
+                # zone = (x1,y1,x2,y2)
+                if coordinates[0] >= zone[0] and coordinates[0] <= zone[2] and \
+                   coordinates[1] >= zone[1] and coordinates[1] <= zone[3]:
+                    all_tags.append(tags)
+                else:
+                    all_tags.append([])
+        else:
+            all_tags = self.all_tags
+
         next_frame = select_multiple_zones(
             frame.copy(),
             self.zones,
-            all_tags=self.all_tags,
+            all_tags=all_tags,
             alpha=self.alpha,
             color=self.color,
             normalized=self.normalized,
@@ -236,5 +267,14 @@ class SelectorCV2():
             thickness=self.thickness,
             closed=self.closed_polygon
         )
+
+        for free_tag in self.free_tags:
+            next_frame = draw_free_tag(
+                next_frame,
+                free_tag['coordinates'],
+                free_tag['tags'],
+                alpha=self.alpha,
+                #color=self.color
+            )
 
         return cv2.resize(next_frame, (0,0), fx=fx, fy=fy, interpolation=interpolation)
