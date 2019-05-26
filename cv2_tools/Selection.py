@@ -40,6 +40,7 @@ class SelectorCV2():
         self.zones = []
         self.polygon_zones = []
         self.all_tags = []
+        self.free_tags = []
         # Visual parameters: It is going to be all the default values
         self.alpha = alpha
         self.color = color
@@ -183,6 +184,19 @@ class SelectorCV2():
             self.all_tags.append(tags)
 
 
+    def add_free_tags(self, coordinates, tags):
+        """  Add tags not asociated with selections.
+
+        Arguments:
+        coordinates -- touple of two ints (x1,y1).
+        tags -- string or list of strings with all the tags to write.
+                It supports \n character.
+        """
+        if type(tags) == str:
+            tags = [tags]
+        self.free_tags.append({'coordinates':coordinates, 'tags':tags})
+
+
     def set_range_valid_rectangles(self, origin, destination):
         """ It is going to be proably a deprecated method """
         self.zones = self.zones[origin:destination]
@@ -253,5 +267,14 @@ class SelectorCV2():
             thickness=self.thickness,
             closed=self.closed_polygon
         )
+
+        for free_tag in self.free_tags:
+            next_frame = draw_free_tag(
+                next_frame,
+                free_tag['coordinates'],
+                free_tag['tags'],
+                alpha=self.alpha,
+                #color=self.color
+            )
 
         return cv2.resize(next_frame, (0,0), fx=fx, fy=fy, interpolation=interpolation)

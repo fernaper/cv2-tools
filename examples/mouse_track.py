@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from cv2_tools.Selection import SelectorCV2, MouseSelectorCV2
+from cv2_tools.Selection import SelectorCV2
 
 x_mouse = 0
 y_mouse = 0

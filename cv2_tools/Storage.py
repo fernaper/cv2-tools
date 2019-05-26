@@ -75,7 +75,8 @@ class StorageCV2():
         'frames': [
             {
                 'zones':[[x1,x2,y1,y2],...],
-                'all_tags':[['text',...],...],,
+                'all_tags':[['text',...],...],
+                'free_tags':[], # Not always
                 'polygon_zones': [
                     [(x,y),..],
                     ...
@@ -148,6 +149,10 @@ class StorageCV2():
         for polygon in info_frame['polygon_zones']:
             selector.add_polygon(polygon, surrounding_box=False)
 
+        if 'free_tags' in info_frame:
+            for free_tag in info_frame['free_tags']:
+                selector.add_free_tags(free_tag['coordinates'],free_tag['tags'])
+
         self.count_frames += 1
 
         return selector
@@ -185,7 +190,8 @@ class StorageCV2():
         frame_structure = {
             'polygon_zones':selector.polygon_zones,
             'zones':selector.zones,
-            'all_tags':selector.all_tags
+            'all_tags':selector.all_tags,
+            'free_tags':selector.free_tags
         }
 
         if selector.specific_properties:
