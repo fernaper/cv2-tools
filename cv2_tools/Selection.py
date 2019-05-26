@@ -204,22 +204,39 @@ class SelectorCV2():
                 self.all_tags.pop(i)
 
 
-    def draw(self, frame, fx=1, fy=1, interpolation=cv2.INTER_LINEAR):
+    def draw(self, frame, coordinates=(-1,-1), draw_tags=True, fx=1, fy=1, interpolation=cv2.INTER_LINEAR):
         """  Draw all selections.
 
         Arguments:
         frame -- opencv frame object where you want to draw
 
         Keyword arguments:
+        coordinates -- if indicated, the system will draw tags inside the selected
+                       coordinates. If not passed, the system will draw all the
+                       tags (default (-1,-1))
+        draw_tags -- boolean value, if false, the system won't draw any tag
+                     (default True)
         fx -- frame horizonal scale (default 1)
         fy -- frame vertical scale (default 1)
         interpolation -- cv2 default scaling algorithm (default cv2.INTER_LINEAR)
         """
 
+        if coordinates != (-1,-1):
+            all_tags = []
+            for zone, tags in zip(self.zones, self.all_tags):
+                # zone = (x1,y1,x2,y2)
+                if coordinates[0] >= zone[0] and coordinates[0] <= zone[2] and \
+                   coordinates[1] >= zone[1] and coordinates[1] <= zone[3]:
+                    all_tags.append(tags)
+                else:
+                    all_tags.append([])
+        else:
+            all_tags = self.all_tags
+
         next_frame = select_multiple_zones(
             frame.copy(),
             self.zones,
-            all_tags=self.all_tags,
+            all_tags=all_tags,
             alpha=self.alpha,
             color=self.color,
             normalized=self.normalized,
