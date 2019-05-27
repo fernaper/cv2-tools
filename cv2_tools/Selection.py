@@ -184,17 +184,40 @@ class SelectorCV2():
             self.all_tags.append(tags)
 
 
-    def add_free_tags(self, coordinates, tags):
+    def add_free_tags(self, coordinates, tags, alpha=0.75, color=(20,20,20),
+                      font=cv2.FONT_HERSHEY_COMPLEX_SMALL, font_scale=0.75,
+                      font_color=(255,255,255), thickness=1, **kwargs):
         """  Add tags not asociated with selections.
 
         Arguments:
         coordinates -- touple of two ints (x1,y1).
         tags -- string or list of strings with all the tags to write.
                 It supports \n character.
+
+        Keyword Arguments:
+        alpha -- transparency of the tags background on the image (default 0.75)
+                 1 means totally visible and 0 totally invisible
+        color -- color of the tags background, touple with 3 elements BGR (default (20,20,20) -> almost black)
+                 BGR = Blue - Green - Red
+        font -- opencv font (default cv2.FONT_HARSHEY_COMPLEX_SMALL)
+        font_scale -- scale of the fontm between 0 and 1 (default 0.75)
+        font_color -- color of the tags text, touple with 3 elements BGR (default (255,255,255) -> white)
+                      BGR = Blue - Green - Red
+        thickness -- thickness of the text in pixels (default 1)
+        kwargs -- We have added this field to avoid compatibility errors with previous
+                  and future versions, but it is not really used,
+                  we use it to ignore extra fields
         """
+        font_info = (font, font_scale, font_color, thickness)
         if type(tags) == str:
             tags = [tags]
-        self.free_tags.append({'coordinates':coordinates, 'tags':tags})
+        self.free_tags.append({
+            'coordinates':coordinates,
+            'tags':tags,
+            'color':color,
+            'font_info':font_info,
+            'alpha':alpha
+        })
 
 
     def set_range_valid_rectangles(self, origin, destination):
@@ -273,8 +296,9 @@ class SelectorCV2():
                 next_frame,
                 free_tag['coordinates'],
                 free_tag['tags'],
-                alpha=self.alpha,
-                #color=self.color
+                alpha=free_tag['alpha'],
+                color=free_tag['color'],
+                font_info=free_tag['font_info']
             )
 
         return cv2.resize(next_frame, (0,0), fx=fx, fy=fy, interpolation=interpolation)
