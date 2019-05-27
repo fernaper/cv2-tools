@@ -1,6 +1,7 @@
 # MIT License
 # Copyright (c) 2019 Fernando Perez
 import numpy as np
+import time
 import sys
 import cv2
 
@@ -35,6 +36,43 @@ def get_lighter_color(color):
     add = 255 - max(color)
     add = min(add,30)
     return (color[0] + add, color[1] + add, color[2] + add)
+
+
+def calculate_video_fps(video, stream=False):
+    """Calculate frames per second of a video or streaming.
+    If it is a video, we will get the data at real time.
+    If not, we will need to calculate by hand. It means that we will waste some
+    frames to check the average FPS.
+    If this is a problem for you, don't call this method.
+
+    Arguments:
+    video -- cv2.VideoCapture to check FPS
+
+    Keyword arguments:
+    stream -- Optional parameter to specify if it is an streaming or not (default False)
+    Return:
+    Return the video/streaming FPS
+
+    """
+    (major_ver, minor_ver, subminor_ver) = (cv2.__version__).split('.')
+
+    # With most of streams get(CV_CAP_PROP_FPS) does not work.
+    if not stream:
+        if int(major_ver)  < 3 :
+            fps = video.get(cv2.cv.CV_CAP_PROP_FPS)
+        else :
+            fps = video.get(cv2.CAP_PROP_FPS)
+    else:
+        # Number of frames to capture
+        num_frames = 120;
+        start = time.time()
+        # Grab a few frames
+        for i in range(0, num_frames) :
+            ret, frame = video.read()
+        end = time.time()
+        # Calculate frames per second
+        fps  = num_frames / (end - start);
+    return fps
 
 
 def get_shape_tags(tags, font_info=(cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.75, (255,255,255), 1)):
