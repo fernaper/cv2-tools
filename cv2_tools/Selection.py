@@ -19,8 +19,8 @@ class SelectorCV2():
     """
 
 
-    def __init__(self, alpha=0.9, color=(110,70,45), normalized=False, thickness=2,
-                 filled=False, peephole=True, margin=5, closed_polygon=False,
+    def __init__(self, alpha=0.9, color=(110,70,45), polygon_color=(110,45,93), normalized=False,
+                 thickness=2, filled=False, peephole=True, margin=5, closed_polygon=False,
                  show_vertexes=False):
         """  SelectorCV2 constructor.
 
@@ -29,6 +29,7 @@ class SelectorCV2():
                  1 means totally visible and 0 totally invisible
         color -- color of the selected zones, touple with 3 elements BGR (default (110,70,45) -> dark blue)
                  BGR = Blue - Green - Red
+        polygon_color -- color of the polygons, same structure as color
         normalized -- boolean parameter, if True, position provided normalized (between 0 and 1)
                       else you should provide concrete values (default False)
         thickness -- thickness of the drawing in pixels (default 2)
@@ -46,6 +47,7 @@ class SelectorCV2():
         # Visual parameters: It is going to be all the default values
         self.alpha = alpha
         self.color = color
+        self.polygon_color = polygon_color
         self.normalized = normalized
         self.thickness = thickness
         self.filled = filled
@@ -63,8 +65,8 @@ class SelectorCV2():
         self.specific_properties = {}
 
 
-    def set_properties(self, alpha=None, color=None, normalized=None,
-                       thickness=None, filled=None, peephole=None,
+    def set_properties(self, alpha=None, color=None, polygon_color=None,
+                       normalized=None, thickness=None, filled=None, peephole=None,
                        margin=None, closed_polygon=None, show_vertexes=None):
         """  Set default properties.
 
@@ -77,6 +79,7 @@ class SelectorCV2():
                  1 means totally visible and 0 totally invisible
         color -- color of the selected zones, touple with 3 elements BGR (default None)
                  BGR = Blue - Green - Red
+        polygon_color -- color of the polygons, same structure as color
         normalized -- boolean parameter, if True, position provided normalized (between 0 and 1) (default None)
                       else you should provide concrete values (default None)
         thickness -- thickness of the drawing in pixels (default None)
@@ -89,6 +92,8 @@ class SelectorCV2():
             self.alpha = alpha
         if color is not None:
             self.color = color
+        if polygon_color is not None:
+            self.polygon_color = polygon_color
         if normalized is not None:
             self.normalized = normalized
         if thickness is not None:
@@ -284,8 +289,19 @@ class SelectorCV2():
         else:
             all_tags = self.all_tags
 
-        next_frame = select_multiple_zones(
+        # Step 1: Draw polygons
+        next_frame = select_polygon(
             frame.copy(),
+            all_vertexes=self.polygon_zones,
+            color=self.polygon_color,
+            thickness=self.thickness,
+            closed=self.closed_polygon,
+            show_vertexes=self.show_vertexes
+        )
+
+        # Step 2: Draw selections
+        next_frame = select_multiple_zones(
+            next_frame,
             self.zones,
             all_tags=all_tags,
             alpha=self.alpha,
@@ -297,15 +313,7 @@ class SelectorCV2():
             margin=self.margin,
             specific_properties=self.specific_properties)
 
-        next_frame = select_polygon(
-            next_frame,
-            all_vertexes=self.polygon_zones,
-            color=self.color,
-            thickness=self.thickness,
-            closed=self.closed_polygon,
-            show_vertexes=self.show_vertexes
-        )
-
+        # Step 3: Draw free tags
         for free_tag in self.free_tags:
             next_frame = draw_free_tag(
                 next_frame,

@@ -347,10 +347,10 @@ def add_peephole(frame, position, alpha=0.5, color=(110,70,45), thickness=2, lin
             cv2.line(overlay,(position.x2, position.y1),(position.x2, position.y1 + line_length), color, thickness+1)
             cv2.line(overlay,(position.x2, position.y2),(position.x2, position.y2 - line_length), color, thickness+1)
         # Added extra lines that gives the peephole effect
-        cv2.line(overlay,(position.x1, int((position.y1 + position.y2) / 2)),(position.x1 + line_length, int((position.y1 + position.y2) / 2)), color, thickness-1)
-        cv2.line(overlay,(position.x2, int((position.y1 + position.y2) / 2)),(position.x2 - line_length, int((position.y1 + position.y2) / 2)), color, thickness-1)
-        cv2.line(overlay,(int((position.x1 + position.x2) / 2), position.y1),(int((position.x1 + position.x2) / 2), position.y1 + line_length), color, thickness-1)
-        cv2.line(overlay,(int((position.x1 + position.x2) / 2), position.y2),(int((position.x1 + position.x2) / 2), position.y2 - line_length), color, thickness-1)
+        cv2.line(overlay,(position.x1, int((position.y1 + position.y2) / 2)),(position.x1 + line_length, int((position.y1 + position.y2) / 2)), color, max(1,thickness-1))
+        cv2.line(overlay,(position.x2, int((position.y1 + position.y2) / 2)),(position.x2 - line_length, int((position.y1 + position.y2) / 2)), color, max(1,thickness-1))
+        cv2.line(overlay,(int((position.x1 + position.x2) / 2), position.y1),(int((position.x1 + position.x2) / 2), position.y1 + line_length), color, max(1,thickness-1))
+        cv2.line(overlay,(int((position.x1 + position.x2) / 2), position.y2),(int((position.x1 + position.x2) / 2), position.y2 - line_length), color, max(1,thickness-1))
         cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
     return frame
 
@@ -559,7 +559,7 @@ def select_zone(frame, position, tags=[], tag_position=None, alpha=0.9, color=(1
     # If thickness is 0 or less we can just avoid to draw any rectangle
     if thickness > 0:
         if peephole:
-            frame = add_peephole(frame, position, alpha=alpha, color=color)
+            frame = add_peephole(frame, position, thickness=thickness, alpha=alpha, color=color)
 
         if filled:
             overlay = frame.copy()
