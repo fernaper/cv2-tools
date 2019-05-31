@@ -19,8 +19,9 @@ class SelectorCV2():
     """
 
 
-    def __init__(self, alpha=0.9, color=(110,70,45), normalized=False, thickness=2,
-                 filled=False, peephole=True, margin=5, closed_polygon=False):
+    def __init__(self, alpha=0.9, color=(110,70,45), polygon_color=(110,45,93), normalized=False,
+                 thickness=2, filled=False, peephole=True, margin=5, closed_polygon=False,
+                 show_vertexes=False):
         """  SelectorCV2 constructor.
 
         Keyword arguments:
@@ -28,6 +29,7 @@ class SelectorCV2():
                  1 means totally visible and 0 totally invisible
         color -- color of the selected zones, touple with 3 elements BGR (default (110,70,45) -> dark blue)
                  BGR = Blue - Green - Red
+        polygon_color -- color of the polygons, same structure as color
         normalized -- boolean parameter, if True, position provided normalized (between 0 and 1)
                       else you should provide concrete values (default False)
         thickness -- thickness of the drawing in pixels (default 2)
@@ -35,6 +37,7 @@ class SelectorCV2():
         peephole -- boolean parameter, if True, it also draws additional effects, so it looks like a peephole
         margin -- extra margin in pixels to be separeted with the selected zone (default 5)
         closed_polygon -- boolean parameter, if True, when you pass a polygon, it will draw the polygon closing it (default False)
+        show_vertexes -- boolean parameter, if True, when you pass a polygon, it will draw small circles on each vertex (default False)
         """
 
         self.zones = []
@@ -44,11 +47,13 @@ class SelectorCV2():
         # Visual parameters: It is going to be all the default values
         self.alpha = alpha
         self.color = color
+        self.polygon_color = polygon_color
         self.normalized = normalized
         self.thickness = thickness
         self.filled = filled
         self.peephole = peephole
         self.margin = margin
+        self.show_vertexes = show_vertexes
         # Polygon
         self.closed_polygon = closed_polygon
         # From index (polygon_zones) -> {
@@ -60,9 +65,9 @@ class SelectorCV2():
         self.specific_properties = {}
 
 
-    def set_properties(self, alpha=None, color=None, normalized=None,
-                       thickness=None, filled=None, peephole=None,
-                       margin=None, closed_polygon=None):
+    def set_properties(self, alpha=None, color=None, polygon_color=None,
+                       normalized=None, thickness=None, filled=None, peephole=None,
+                       margin=None, closed_polygon=None, show_vertexes=None):
         """  Set default properties.
 
         Note: All parameters are setted to None, but this is because, this method
@@ -74,6 +79,7 @@ class SelectorCV2():
                  1 means totally visible and 0 totally invisible
         color -- color of the selected zones, touple with 3 elements BGR (default None)
                  BGR = Blue - Green - Red
+        polygon_color -- color of the polygons, same structure as color
         normalized -- boolean parameter, if True, position provided normalized (between 0 and 1) (default None)
                       else you should provide concrete values (default None)
         thickness -- thickness of the drawing in pixels (default None)
@@ -86,6 +92,8 @@ class SelectorCV2():
             self.alpha = alpha
         if color is not None:
             self.color = color
+        if polygon_color is not None:
+            self.polygon_color = polygon_color
         if normalized is not None:
             self.normalized = normalized
         if thickness is not None:
@@ -98,6 +106,8 @@ class SelectorCV2():
             self.margin = margin
         if closed_polygon is not None:
             self.closed_polygon = closed_polygon
+        if show_vertexes is not None:
+            self.show_vertexes = show_vertexes
 
 
     def add_zone(self, zone, tags=None, specific_properties={}):
@@ -122,9 +132,10 @@ class SelectorCV2():
                     'alpha': value,   (transparency of the selected zone on the image)
                     'color': value,   (color of the selected zones, touple with 3 elements BGR)
                     'filled': value,  (boolean parameter, if True, it will draw a filled rectangle with one-third opacity compared to the rectangle)
-                    'peephole': value (boolean parameter, if True, it also draws additional effects, so it looks like a peephole)
+                    'peephole': value, (boolean parameter, if True, it also draws additional effects, so it looks like a peephole)
+                    'thickness': value (int parameter, you can specify the thickness of the selection)
                 }
-                Note: You can't specify some attributes as: normalized, thickness, margin or closed_polygon (we are considering add some of them)
+                Note: You can't specify some attributes as: normalized or closed_polygon (we are considering add some of them)
         """
         self.zones.append(zone)
         if tags and type(tags) is not list:
@@ -137,7 +148,7 @@ class SelectorCV2():
         if specific_properties:
             index = len(self.zones)-1
             self.specific_properties[index] = {}
-            for attribute in ['alpha', 'color', 'filled', 'peephole']:
+            for attribute in ['alpha', 'color', 'filled', 'peephole', 'thickness']:
                 if attribute in specific_properties:
                     self.specific_properties[index][attribute] = specific_properties[attribute]
 
@@ -148,22 +159,23 @@ class SelectorCV2():
         Arguments:
         polygon -- list of points. Each point is a touple (x1, y1)
                 This elements should be between 0 and 1 in case it is normalized
-                or between 0 and frame height/width (it value not in the margins,
-                it will show a warning, unless you set the variable IGNORE_ERRORS
-                to True in Utils.py).
+                or between 0 and frame height/width (if value not in the margins,
+                and variable IGNORE_ERRORS in Utils.py was set to False, it will
+                show a warning.
 
         Keyword arguments:
         surrounding_box -- boolean parameter. If it is True, it will draw a
                 rectangle around the polygon
-        tags -- Tags to attach to the selection.
-                Right now it doesn't show tags if surrounding_box = False (default None)
+        tags -- Tags to attach to the selection. (default None)
         """
         if not polygon:
             return
 
         self.polygon_zones.append(polygon)
 
-        if surrounding_box:
+        # If we don't have any tags and we don't want to add a surrounding box
+        # just skip all of this stuff (this will do our system faster)
+        if tags or surrounding_box:
             min_x, min_y, max_x, max_y = polygon[0][0], polygon[0][1], 0, 0
             for position in polygon:
                 if position[0] < min_x:
@@ -183,18 +195,48 @@ class SelectorCV2():
                 tags = []
             self.all_tags.append(tags)
 
+            # We specify not to show the surrounding box
+            if not surrounding_box:
+                index = len(self.zones)-1
+                self.specific_properties[index] = {
+                    'thickness':0
+                }
 
-    def add_free_tags(self, coordinates, tags):
+
+    def add_free_tags(self, coordinates, tags, alpha=0.75, color=(20,20,20),
+                      font=cv2.FONT_HERSHEY_COMPLEX_SMALL, font_scale=0.75,
+                      font_color=(255,255,255), thickness=1, **kwargs):
         """  Add tags not asociated with selections.
 
         Arguments:
         coordinates -- touple of two ints (x1,y1).
         tags -- string or list of strings with all the tags to write.
                 It supports \n character.
+
+        Keyword Arguments:
+        alpha -- transparency of the tags background on the image (default 0.75)
+                 1 means totally visible and 0 totally invisible
+        color -- color of the tags background, touple with 3 elements BGR (default (20,20,20) -> almost black)
+                 BGR = Blue - Green - Red
+        font -- opencv font (default cv2.FONT_HARSHEY_COMPLEX_SMALL)
+        font_scale -- scale of the fontm between 0 and 1 (default 0.75)
+        font_color -- color of the tags text, touple with 3 elements BGR (default (255,255,255) -> white)
+                      BGR = Blue - Green - Red
+        thickness -- thickness of the text in pixels (default 1)
+        kwargs -- We have added this field to avoid compatibility errors with previous
+                  and future versions, but it is not really used,
+                  we use it to ignore extra fields
         """
+        font_info = (font, font_scale, font_color, thickness)
         if type(tags) == str:
             tags = [tags]
-        self.free_tags.append({'coordinates':coordinates, 'tags':tags})
+        self.free_tags.append({
+            'coordinates':coordinates,
+            'tags':tags,
+            'color':color,
+            'font_info':font_info,
+            'alpha':alpha
+        })
 
 
     def set_range_valid_rectangles(self, origin, destination):
@@ -247,8 +289,19 @@ class SelectorCV2():
         else:
             all_tags = self.all_tags
 
-        next_frame = select_multiple_zones(
+        # Step 1: Draw polygons
+        next_frame = select_polygon(
             frame.copy(),
+            all_vertexes=self.polygon_zones,
+            color=self.polygon_color,
+            thickness=self.thickness,
+            closed=self.closed_polygon,
+            show_vertexes=self.show_vertexes
+        )
+
+        # Step 2: Draw selections
+        next_frame = select_multiple_zones(
+            next_frame,
             self.zones,
             all_tags=all_tags,
             alpha=self.alpha,
@@ -260,21 +313,15 @@ class SelectorCV2():
             margin=self.margin,
             specific_properties=self.specific_properties)
 
-        next_frame = select_polygon(
-            next_frame,
-            all_vertexes=self.polygon_zones,
-            color=self.color,
-            thickness=self.thickness,
-            closed=self.closed_polygon
-        )
-
+        # Step 3: Draw free tags
         for free_tag in self.free_tags:
             next_frame = draw_free_tag(
                 next_frame,
                 free_tag['coordinates'],
                 free_tag['tags'],
-                alpha=self.alpha,
-                #color=self.color
+                alpha=free_tag['alpha'],
+                color=free_tag['color'],
+                font_info=free_tag['font_info']
             )
 
         return cv2.resize(next_frame, (0,0), fx=fx, fy=fy, interpolation=interpolation)

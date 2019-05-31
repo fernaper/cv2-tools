@@ -1,6 +1,7 @@
 # MIT License
 # Copyright (c) 2019 Fernando Perez
 import numpy as np
+import time
 import sys
 import cv2
 
@@ -35,6 +36,43 @@ def get_lighter_color(color):
     add = 255 - max(color)
     add = min(add,30)
     return (color[0] + add, color[1] + add, color[2] + add)
+
+
+def calculate_video_fps(video, stream=False):
+    """Calculate frames per second of a video or streaming.
+    If it is a video, we will get the data at real time.
+    If not, we will need to calculate by hand. It means that we will waste some
+    frames to check the average FPS.
+    If this is a problem for you, don't call this method.
+
+    Arguments:
+    video -- cv2.VideoCapture to check FPS
+
+    Keyword arguments:
+    stream -- Optional parameter to specify if it is an streaming or not (default False)
+    Return:
+    Return the video/streaming FPS
+
+    """
+    (major_ver, minor_ver, subminor_ver) = (cv2.__version__).split('.')
+
+    # With most of streams get(CV_CAP_PROP_FPS) does not work.
+    if not stream:
+        if int(major_ver)  < 3 :
+            fps = video.get(cv2.cv.CV_CAP_PROP_FPS)
+        else :
+            fps = video.get(cv2.CAP_PROP_FPS)
+    else:
+        # Number of frames to capture
+        num_frames = 120;
+        start = time.time()
+        # Grab a few frames
+        for i in range(0, num_frames) :
+            ret, frame = video.read()
+        end = time.time()
+        # Calculate frames per second
+        fps  = num_frames / (end - start);
+    return fps
 
 
 def get_shape_tags(tags, font_info=(cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.75, (255,255,255), 1)):
@@ -100,8 +138,21 @@ def draw_free_tag(frame, coordinates, tags, alpha=0.75, color=(20,20,20),
     margin = 5
     if type(tags) is str:
         tags = [tags]
-    return add_tags(frame, Rectangle(coordinates[0]-margin, coordinates[1]-margin, coordinates[0], coordinates[1]),
-                    tags, tag_position='inside', alpha=alpha, color=color, font_info=font_info)
+
+    x = coordinates[0]-margin
+    y = coordinates[1]-margin
+
+    if coordinates[0] < 0 or coordinates[1] < 0:
+        f_height, f_width = frame.shape[:2]
+
+        width, height = get_shape_tags(tags, font_info)
+        if coordinates[0] < 0:
+            x = f_width - width + coordinates[0] - 2*margin
+        if coordinates[1] < 0:
+            y = f_height - height + coordinates[1] - 2*margin
+
+    return add_tags(frame, Rectangle(x, y, x, y), tags, tag_position='inside',
+                    alpha=alpha, color=color, font_info=font_info)
 
 
 def add_tags(frame, position, tags, tag_position=None, alpha=0.75, color=(20, 20, 20),
@@ -296,10 +347,10 @@ def add_peephole(frame, position, alpha=0.5, color=(110,70,45), thickness=2, lin
             cv2.line(overlay,(position.x2, position.y1),(position.x2, position.y1 + line_length), color, thickness+1)
             cv2.line(overlay,(position.x2, position.y2),(position.x2, position.y2 - line_length), color, thickness+1)
         # Added extra lines that gives the peephole effect
-        cv2.line(overlay,(position.x1, int((position.y1 + position.y2) / 2)),(position.x1 + line_length, int((position.y1 + position.y2) / 2)), color, thickness-1)
-        cv2.line(overlay,(position.x2, int((position.y1 + position.y2) / 2)),(position.x2 - line_length, int((position.y1 + position.y2) / 2)), color, thickness-1)
-        cv2.line(overlay,(int((position.x1 + position.x2) / 2), position.y1),(int((position.x1 + position.x2) / 2), position.y1 + line_length), color, thickness-1)
-        cv2.line(overlay,(int((position.x1 + position.x2) / 2), position.y2),(int((position.x1 + position.x2) / 2), position.y2 - line_length), color, thickness-1)
+        cv2.line(overlay,(position.x1, int((position.y1 + position.y2) / 2)),(position.x1 + line_length, int((position.y1 + position.y2) / 2)), color, max(1,thickness-1))
+        cv2.line(overlay,(position.x2, int((position.y1 + position.y2) / 2)),(position.x2 - line_length, int((position.y1 + position.y2) / 2)), color, max(1,thickness-1))
+        cv2.line(overlay,(int((position.x1 + position.x2) / 2), position.y1),(int((position.x1 + position.x2) / 2), position.y1 + line_length), color, max(1,thickness-1))
+        cv2.line(overlay,(int((position.x1 + position.x2) / 2), position.y2),(int((position.x1 + position.x2) / 2), position.y2 - line_length), color, max(1,thickness-1))
         cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
     return frame
 
@@ -394,7 +445,7 @@ def adjust_polygon(shape, point, normalized=False, thickness=0):
     return (x1, y1)
 
 
-def select_polygon(frame, all_vertexes, normalized=False, color=(110,70,45), thickness=2, closed=False):
+def select_polygon(frame, all_vertexes, normalized=False, color=(110,70,45), thickness=2, closed=False, show_vertexes=False):
     """ Draw a polygon
 
     Arguments:
@@ -417,11 +468,15 @@ def select_polygon(frame, all_vertexes, normalized=False, color=(110,70,45), thi
 
     for vertexes in all_vertexes:
         vertexes = np.array(vertexes)
-        cv2.polylines(frame, [vertexes], closed, get_lighter_color(color), thickness=thickness-1)
+        lighter_color = get_lighter_color(color)
+        cv2.polylines(frame, [vertexes], closed, lighter_color, thickness=thickness-1)
+        if show_vertexes:
+            for vertex in vertexes:
+                cv2.circle(frame,(vertex[0],vertex[1]), thickness, lighter_color, -1)
     return frame
 
 
-def select_zone_dict(frame, position, tags=[], tag_position=None, normalized=False, margin=5, thickness=2, other_parameters={}):
+def select_zone_dict(frame, position, tags=[], tag_position=None, normalized=False, margin=5, other_parameters={}):
     """ Draw better rectangles to select zones.
 
     This is an alternative of select_zone. We use it in case we have specific
@@ -444,7 +499,6 @@ def select_zone_dict(frame, position, tags=[], tag_position=None, normalized=Fal
     normalized -- boolean parameter, if True, position provided normalized (between 0 and 1)
                   else you shold provide concrete values (default False)
     margin -- extra margin in pixels to be separeted with the selected zone (default 5)
-    thickness -- thickness of the drawing in pixels (default 0)
     other_parameters -- dictionary with keys alpha, color, filled and peephole
             alpha -- transparency of the selected zone on the image (default 0.9)
                      1 means totally visible and 0 totally invisible
@@ -460,7 +514,7 @@ def select_zone_dict(frame, position, tags=[], tag_position=None, normalized=Fal
     """
     return select_zone(frame, position, tags, tag_position=tag_position,
             alpha=other_parameters['alpha'], color=other_parameters['color'],
-            normalized=normalized, thickness=thickness,
+            normalized=normalized, thickness=other_parameters['thickness'],
             filled=other_parameters['filled'], peephole=other_parameters['peephole'],
             margin=margin)
 
@@ -501,17 +555,20 @@ def select_zone(frame, position, tags=[], tag_position=None, alpha=0.9, color=(1
     if type(position) is tuple:
         position = Rectangle(position[0],position[1],position[2],position[3])
     position = adjust_position(frame.shape[:2], position, normalized=normalized, thickness=thickness)
-    if peephole:
-        frame = add_peephole(frame, position, alpha=alpha, color=color)
 
-    if filled:
+    # If thickness is 0 or less we can just avoid to draw any rectangle
+    if thickness > 0:
+        if peephole:
+            frame = add_peephole(frame, position, thickness=thickness, alpha=alpha, color=color)
+
+        if filled:
+            overlay = frame.copy()
+            cv2.rectangle(overlay, (position.x1, position.y1), (position.x2, position.y2), color,thickness=cv2.FILLED)
+            cv2.addWeighted(overlay, alpha/3.0, frame, 1 - alpha/3.0, 0, frame)
+
         overlay = frame.copy()
-        cv2.rectangle(overlay, (position.x1, position.y1), (position.x2, position.y2), color,thickness=cv2.FILLED)
-        cv2.addWeighted(overlay, alpha/3.0, frame, 1 - alpha/3.0, 0, frame)
-
-    overlay = frame.copy()
-    cv2.rectangle(overlay, (position.x1, position.y1), (position.x2, position.y2), color,thickness=thickness)
-    cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
+        cv2.rectangle(overlay, (position.x1, position.y1), (position.x2, position.y2), color,thickness=thickness)
+        cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
 
     frame = add_tags(frame, position, tags, tag_position=tag_position)
     return frame
@@ -567,7 +624,7 @@ def select_multiple_zones(frame, all_selected_zones, all_tags=None, alpha=0.9, c
 
     for i, zone in enumerate(all_selected_zones):
         tags = None
-        positon = None
+        position = None
 
         # Im checking all of this stuff just in case
         if all_tags and best_position and i < len(all_tags) and i < len(best_position):
@@ -583,14 +640,12 @@ def select_multiple_zones(frame, all_selected_zones, all_tags=None, alpha=0.9, c
                 specific_properties[i]['filled'] = filled
             if 'peephole' not in specific_properties[i]:
                 specific_properties[i]['peephole'] = peephole
+            if 'thickness' not in specific_properties[i]:
+                specific_properties[i]['thickness'] = thickness
 
             frame = select_zone_dict(frame,zone, tags=tags,tag_position=position,
-                    normalized=normalized,margin=margin, thickness=thickness,
-                    other_parameters=specific_properties[i])
+                    normalized=normalized,margin=margin, other_parameters=specific_properties[i])
         else:
-            # Quick fix for issue #50
-            if not 'position' in locals():
-                position = None
             frame = select_zone(frame, zone, tags=tags, tag_position=position,
                     alpha=alpha, color=color, thickness=thickness, filled=filled,
                     peephole=peephole, margin=margin)

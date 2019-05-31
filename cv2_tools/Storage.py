@@ -151,7 +151,10 @@ class StorageCV2():
 
         if 'free_tags' in info_frame:
             for free_tag in info_frame['free_tags']:
-                selector.add_free_tags(free_tag['coordinates'],free_tag['tags'])
+                coordinates = free_tag.pop('coordinates')
+                tags = free_tag.pop('tags')
+                # This is how we can pass all the other params to the function in an easy way
+                selector.add_free_tags(coordinates,tags, **free_tag)
 
         self.count_frames += 1
 
