@@ -138,8 +138,21 @@ def draw_free_tag(frame, coordinates, tags, alpha=0.75, color=(20,20,20),
     margin = 5
     if type(tags) is str:
         tags = [tags]
-    return add_tags(frame, Rectangle(coordinates[0]-margin, coordinates[1]-margin, coordinates[0], coordinates[1]),
-                    tags, tag_position='inside', alpha=alpha, color=color, font_info=font_info)
+
+    x = coordinates[0]-margin
+    y = coordinates[1]-margin
+
+    if coordinates[0] < 0 or coordinates[1] < 0:
+        f_height, f_width = frame.shape[:2]
+
+        width, height = get_shape_tags(tags, font_info)
+        if coordinates[0] < 0:
+            x = f_width - width + coordinates[0] - 2*margin
+        if coordinates[1] < 0:
+            y = f_height - height + coordinates[1] - 2*margin
+
+    return add_tags(frame, Rectangle(x, y, x, y), tags, tag_position='inside',
+                    alpha=alpha, color=color, font_info=font_info)
 
 
 def add_tags(frame, position, tags, tag_position=None, alpha=0.75, color=(20, 20, 20),
