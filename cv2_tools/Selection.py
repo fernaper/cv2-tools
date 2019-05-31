@@ -122,9 +122,10 @@ class SelectorCV2():
                     'alpha': value,   (transparency of the selected zone on the image)
                     'color': value,   (color of the selected zones, touple with 3 elements BGR)
                     'filled': value,  (boolean parameter, if True, it will draw a filled rectangle with one-third opacity compared to the rectangle)
-                    'peephole': value (boolean parameter, if True, it also draws additional effects, so it looks like a peephole)
+                    'peephole': value, (boolean parameter, if True, it also draws additional effects, so it looks like a peephole)
+                    'thickness': value (int parameter, you can specify the thickness of the selection)
                 }
-                Note: You can't specify some attributes as: normalized, thickness, margin or closed_polygon (we are considering add some of them)
+                Note: You can't specify some attributes as: normalized or closed_polygon (we are considering add some of them)
         """
         self.zones.append(zone)
         if tags and type(tags) is not list:
@@ -137,7 +138,7 @@ class SelectorCV2():
         if specific_properties:
             index = len(self.zones)-1
             self.specific_properties[index] = {}
-            for attribute in ['alpha', 'color', 'filled', 'peephole']:
+            for attribute in ['alpha', 'color', 'filled', 'peephole', 'thickness']:
                 if attribute in specific_properties:
                     self.specific_properties[index][attribute] = specific_properties[attribute]
 
@@ -163,7 +164,9 @@ class SelectorCV2():
 
         self.polygon_zones.append(polygon)
 
-        if surrounding_box:
+        # If we don't have any tags and we don't want to add a surrounding box
+        # just skip all of this stuff (this will do our system faster)
+        if tags or surrounding_box:
             min_x, min_y, max_x, max_y = polygon[0][0], polygon[0][1], 0, 0
             for position in polygon:
                 if position[0] < min_x:
@@ -182,6 +185,13 @@ class SelectorCV2():
             elif not tags:
                 tags = []
             self.all_tags.append(tags)
+
+            # We specify not to show the surrounding box
+            if not surrounding_box:
+                index = len(self.zones)-1
+                self.specific_properties[index] = {
+                    'thickness':0
+                }
 
 
     def add_free_tags(self, coordinates, tags, alpha=0.75, color=(20,20,20),

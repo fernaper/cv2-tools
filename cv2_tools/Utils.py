@@ -472,7 +472,7 @@ def select_polygon(frame, all_vertexes, normalized=False, color=(110,70,45), thi
     return frame
 
 
-def select_zone_dict(frame, position, tags=[], tag_position=None, normalized=False, margin=5, thickness=2, other_parameters={}):
+def select_zone_dict(frame, position, tags=[], tag_position=None, normalized=False, margin=5, other_parameters={}):
     """ Draw better rectangles to select zones.
 
     This is an alternative of select_zone. We use it in case we have specific
@@ -495,7 +495,6 @@ def select_zone_dict(frame, position, tags=[], tag_position=None, normalized=Fal
     normalized -- boolean parameter, if True, position provided normalized (between 0 and 1)
                   else you shold provide concrete values (default False)
     margin -- extra margin in pixels to be separeted with the selected zone (default 5)
-    thickness -- thickness of the drawing in pixels (default 0)
     other_parameters -- dictionary with keys alpha, color, filled and peephole
             alpha -- transparency of the selected zone on the image (default 0.9)
                      1 means totally visible and 0 totally invisible
@@ -511,7 +510,7 @@ def select_zone_dict(frame, position, tags=[], tag_position=None, normalized=Fal
     """
     return select_zone(frame, position, tags, tag_position=tag_position,
             alpha=other_parameters['alpha'], color=other_parameters['color'],
-            normalized=normalized, thickness=thickness,
+            normalized=normalized, thickness=other_parameters['thickness'],
             filled=other_parameters['filled'], peephole=other_parameters['peephole'],
             margin=margin)
 
@@ -552,17 +551,20 @@ def select_zone(frame, position, tags=[], tag_position=None, alpha=0.9, color=(1
     if type(position) is tuple:
         position = Rectangle(position[0],position[1],position[2],position[3])
     position = adjust_position(frame.shape[:2], position, normalized=normalized, thickness=thickness)
-    if peephole:
-        frame = add_peephole(frame, position, alpha=alpha, color=color)
+    
+    # If thickness is 0 or less we can just avoid to draw any rectangle
+    if thickness > 0:
+        if peephole:
+            frame = add_peephole(frame, position, alpha=alpha, color=color)
 
-    if filled:
+        if filled:
+            overlay = frame.copy()
+            cv2.rectangle(overlay, (position.x1, position.y1), (position.x2, position.y2), color,thickness=cv2.FILLED)
+            cv2.addWeighted(overlay, alpha/3.0, frame, 1 - alpha/3.0, 0, frame)
+
         overlay = frame.copy()
-        cv2.rectangle(overlay, (position.x1, position.y1), (position.x2, position.y2), color,thickness=cv2.FILLED)
-        cv2.addWeighted(overlay, alpha/3.0, frame, 1 - alpha/3.0, 0, frame)
-
-    overlay = frame.copy()
-    cv2.rectangle(overlay, (position.x1, position.y1), (position.x2, position.y2), color,thickness=thickness)
-    cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
+        cv2.rectangle(overlay, (position.x1, position.y1), (position.x2, position.y2), color,thickness=thickness)
+        cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
 
     frame = add_tags(frame, position, tags, tag_position=tag_position)
     return frame
@@ -618,7 +620,7 @@ def select_multiple_zones(frame, all_selected_zones, all_tags=None, alpha=0.9, c
 
     for i, zone in enumerate(all_selected_zones):
         tags = None
-        positon = None
+        position = None
 
         # Im checking all of this stuff just in case
         if all_tags and best_position and i < len(all_tags) and i < len(best_position):
@@ -634,14 +636,12 @@ def select_multiple_zones(frame, all_selected_zones, all_tags=None, alpha=0.9, c
                 specific_properties[i]['filled'] = filled
             if 'peephole' not in specific_properties[i]:
                 specific_properties[i]['peephole'] = peephole
+            if 'thickness' not in specific_properties[i]:
+                specific_properties[i]['thickness'] = thickness
 
             frame = select_zone_dict(frame,zone, tags=tags,tag_position=position,
-                    normalized=normalized,margin=margin, thickness=thickness,
-                    other_parameters=specific_properties[i])
+                    normalized=normalized,margin=margin, other_parameters=specific_properties[i])
         else:
-            # Quick fix for issue #50
-            if not 'position' in locals():
-                position = None
             frame = select_zone(frame, zone, tags=tags, tag_position=position,
                     alpha=alpha, color=color, thickness=thickness, filled=filled,
                     peephole=peephole, margin=margin)
