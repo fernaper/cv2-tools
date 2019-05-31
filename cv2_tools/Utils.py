@@ -445,7 +445,7 @@ def adjust_polygon(shape, point, normalized=False, thickness=0):
     return (x1, y1)
 
 
-def select_polygon(frame, all_vertexes, normalized=False, color=(110,70,45), thickness=2, closed=False):
+def select_polygon(frame, all_vertexes, normalized=False, color=(110,70,45), thickness=2, closed=False, show_vertexes=False):
     """ Draw a polygon
 
     Arguments:
@@ -468,7 +468,11 @@ def select_polygon(frame, all_vertexes, normalized=False, color=(110,70,45), thi
 
     for vertexes in all_vertexes:
         vertexes = np.array(vertexes)
-        cv2.polylines(frame, [vertexes], closed, get_lighter_color(color), thickness=thickness-1)
+        lighter_color = get_lighter_color(color)
+        cv2.polylines(frame, [vertexes], closed, lighter_color, thickness=thickness-1)
+        if show_vertexes:
+            for vertex in vertexes:
+                cv2.circle(frame,(vertex[0],vertex[1]), thickness, lighter_color, -1)
     return frame
 
 
@@ -551,7 +555,7 @@ def select_zone(frame, position, tags=[], tag_position=None, alpha=0.9, color=(1
     if type(position) is tuple:
         position = Rectangle(position[0],position[1],position[2],position[3])
     position = adjust_position(frame.shape[:2], position, normalized=normalized, thickness=thickness)
-    
+
     # If thickness is 0 or less we can just avoid to draw any rectangle
     if thickness > 0:
         if peephole:

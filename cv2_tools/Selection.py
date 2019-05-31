@@ -20,7 +20,8 @@ class SelectorCV2():
 
 
     def __init__(self, alpha=0.9, color=(110,70,45), normalized=False, thickness=2,
-                 filled=False, peephole=True, margin=5, closed_polygon=False):
+                 filled=False, peephole=True, margin=5, closed_polygon=False,
+                 show_vertexes=False):
         """  SelectorCV2 constructor.
 
         Keyword arguments:
@@ -35,6 +36,7 @@ class SelectorCV2():
         peephole -- boolean parameter, if True, it also draws additional effects, so it looks like a peephole
         margin -- extra margin in pixels to be separeted with the selected zone (default 5)
         closed_polygon -- boolean parameter, if True, when you pass a polygon, it will draw the polygon closing it (default False)
+        show_vertexes -- boolean parameter, if True, when you pass a polygon, it will draw small circles on each vertex (default False)
         """
 
         self.zones = []
@@ -49,6 +51,7 @@ class SelectorCV2():
         self.filled = filled
         self.peephole = peephole
         self.margin = margin
+        self.show_vertexes = show_vertexes
         # Polygon
         self.closed_polygon = closed_polygon
         # From index (polygon_zones) -> {
@@ -62,7 +65,7 @@ class SelectorCV2():
 
     def set_properties(self, alpha=None, color=None, normalized=None,
                        thickness=None, filled=None, peephole=None,
-                       margin=None, closed_polygon=None):
+                       margin=None, closed_polygon=None, show_vertexes=None):
         """  Set default properties.
 
         Note: All parameters are setted to None, but this is because, this method
@@ -98,6 +101,8 @@ class SelectorCV2():
             self.margin = margin
         if closed_polygon is not None:
             self.closed_polygon = closed_polygon
+        if show_vertexes is not None:
+            self.show_vertexes = show_vertexes
 
 
     def add_zone(self, zone, tags=None, specific_properties={}):
@@ -149,15 +154,14 @@ class SelectorCV2():
         Arguments:
         polygon -- list of points. Each point is a touple (x1, y1)
                 This elements should be between 0 and 1 in case it is normalized
-                or between 0 and frame height/width (it value not in the margins,
-                it will show a warning, unless you set the variable IGNORE_ERRORS
-                to True in Utils.py).
+                or between 0 and frame height/width (if value not in the margins,
+                and variable IGNORE_ERRORS in Utils.py was set to False, it will
+                show a warning.
 
         Keyword arguments:
         surrounding_box -- boolean parameter. If it is True, it will draw a
                 rectangle around the polygon
-        tags -- Tags to attach to the selection.
-                Right now it doesn't show tags if surrounding_box = False (default None)
+        tags -- Tags to attach to the selection. (default None)
         """
         if not polygon:
             return
@@ -298,7 +302,8 @@ class SelectorCV2():
             all_vertexes=self.polygon_zones,
             color=self.color,
             thickness=self.thickness,
-            closed=self.closed_polygon
+            closed=self.closed_polygon,
+            show_vertexes=self.show_vertexes
         )
 
         for free_tag in self.free_tags:
