@@ -24,21 +24,51 @@ class ManagerCV2():
     _tries_reconnect_stream = 10
 
     class KeystrokeManager():
+        """ KeystrokeManager helps to manage all keystroke during the for of the manager
+
+        With this Class ManagerCV2 is capable to manage easily each keystroke.
+        """
 
         def __init__(self, **kwargs):
+            """ KeystrokeManager constructor.
+
+            Have in mind that with this class you will never get an error when
+            you ask for an attribute that doesn't exist.
+            It will create with the value: False
+
+            Thats cool because su can pass no params to this constructor, and
+            then when you need to chek if a keystroke was pressed (you really
+            check the param, not the keystroke itself), if it was never pressed
+            the param doesn't exist, but we take care of it for you :)
+
+            Keyword arguments:
+                Each keyword argument that you pass to the constructor will be
+                an attribute for this object.
+            """
             self.__dict__.update(kwargs)
 
         def __getattr__ (self, attr):
+            """ getattr
+
+            Have in mind that this method is called each time that you try to get
+            an attribute that doesn't exist.
+            We manage it creating this attribute an giving a value of False.
+            This is because we want to inform that the asociated with this parameter
+            wasen't pressed yet.
+            """
             self.__dict__[attr] = False
             return False
 
         def execute_management(self, *args):
+            """ execute_management
+
+            Each time a relevant key is pressed, it will set the associated
+            param to True. So you can manage it and decide what to do in each
+            case.
+            """
             for arg in args:
-                try:
-                    value = getattr(self, arg)
-                    setattr(self, arg, not value)
-                except AttributeError  as e:
-                    print('Warning: {}'.format(e))
+                value = getattr(self, arg)
+                setattr(self, arg, not value)
 
 
     def __init__(self, video, is_stream=False, fps_limit=0, queue_size=256):
