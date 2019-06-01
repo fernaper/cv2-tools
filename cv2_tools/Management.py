@@ -23,6 +23,23 @@ class ManagerCV2():
 
     _tries_reconnect_stream = 10
 
+    class KeystrokeManager():
+
+        def __init__(self, **kwargs):
+            self.__dict__.update(kwargs)
+
+        def __getattr__ (self, attr):
+            self.__dict__[attr] = False
+            return False
+
+        def execute_management(self, *args):
+            for arg in args:
+                try:
+                    value = getattr(self, arg)
+                    setattr(self, arg, not value)
+                except AttributeError  as e:
+                    print('Warning: {}'.format(e))
+
 
     def __init__(self, video, is_stream=False, fps_limit=0, queue_size=256):
         """  ManagerCV2 constructor.
@@ -53,14 +70,13 @@ class ManagerCV2():
         self.awake_thread = None
 
         # Keystrokes attributes
+        self.key_manager = ManagerCV2.KeystrokeManager()
         self.last_keystroke = -1
-        self.keystroke_manager = {
+        self.__keystroke_dict = {
             # The first three elements will have allways the same length
             'keystroke':[],
             'wait_key':[],
-            'keystroke_handler':[],
             'keystroke_args':[],
-            'keystroke_kwargs':[],
             'exit_keystrokes':[],
         }
 
@@ -110,16 +126,14 @@ class ManagerCV2():
         self.count_frames += 1
 
         # If they press one of the keystrokes, it will raise the method
-        for i, wait_key in enumerate(self.keystroke_manager['wait_key']):
+        for i, wait_key in enumerate(self.__keystroke_dict['wait_key']):
             self.last_keystroke = cv2.waitKey(wait_key)
 
-            if self.last_keystroke in self.keystroke_manager['keystroke']:
-                index = self.keystroke_manager['keystroke'].index(self.last_keystroke)
+            if self.last_keystroke in self.__keystroke_dict['keystroke']:
+                index = self.__keystroke_dict['keystroke'].index(self.last_keystroke)
 
-                self.keystroke_manager['keystroke_handler'][index](
-                    *self.keystroke_manager['keystroke_args'][index],
-                    **self.keystroke_manager['keystroke_kwargs'][index])
-                if self.last_keystroke in self.keystroke_manager['exit_keystrokes']:
+                self.key_manager.execute_management(*self.__keystroke_dict['keystroke_args'][index])
+                if self.last_keystroke in self.__keystroke_dict['exit_keystrokes']:
                     self.end_iteration()
 
         # Here we limit the speed (if we want constant frames)
@@ -178,30 +192,19 @@ class ManagerCV2():
         self.ret_handler_kwargs = kwargs
 
 
-    def add_keystroke(self, keystroke, wait_key, method, *args, **kwargs):
+    def add_keystroke(self, keystroke, wait_key, *args, exit=False):
         """ Method to execute when pressed a key
 
         Arguments:
         keystroke -- Key to check if pressed
         waitkey -- Ms to wait key (it works exactly as cv2.waitKey)
-        method -- Method to execute
         args -- Arguments to pass to the method
-        kwargs -- Keyword arguments to pass to the method
-                  Note that this method can receive and exit param (you
-                  can't pass a param with the same name to your own method)
         """
-        exit = False
-        if 'exit' in kwargs:
-            exit = kwargs['exit']
-            kwargs.pop('exit', None)
-
-        self.keystroke_manager['keystroke'].append(keystroke)
-        self.keystroke_manager['wait_key'].append(wait_key)
-        self.keystroke_manager['keystroke_handler'].append(method)
-        self.keystroke_manager['keystroke_args'].append(args)
-        self.keystroke_manager['keystroke_kwargs'].append(kwargs)
+        self.__keystroke_dict['keystroke'].append(keystroke)
+        self.__keystroke_dict['wait_key'].append(wait_key)
+        self.__keystroke_dict['keystroke_args'].append(args)
         if exit:
-            self.keystroke_manager['exit_keystrokes'].append(keystroke)
+            self.__keystroke_dict['exit_keystrokes'].append(keystroke)
 
 
     def get_last_keystroke(self):

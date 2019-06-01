@@ -4,29 +4,29 @@ from cv2_tools.Management import ManagerCV2
 import cv2
 
 
-def simple_manager(video, stream, fps):
-    # Create a manager passing video input
-    # Also I inform if it is an stream or not (it is not completly necessary but
-    # in some cases is usefull)
-    # Finally I put a limit of FPS (this is more important if it is not an stream,
-    # by default it will try to consume the video as fast as possible, and you could
-    # want to show it at real time)
+def key_manager(video, stream, fps):
     manager_cv2 = ManagerCV2(cv2.VideoCapture(video), is_stream=stream, fps_limit=fps)
-
-    # I decide that I want to exit by pressing `esc` (if you want to see more
-    # about this, check the example `keystroke.py`)
     manager_cv2.add_keystroke(27, 1, exit=True)
+    manager_cv2.add_keystroke(ord('f'), 1, 'flip')
+    manager_cv2.add_keystroke(ord('g'), 1, 'gray')
+    manager_cv2.add_keystroke(ord('c'), 1, 'cartoon')
 
     # With that simple for you will get your video, frame by frame 52% faster
     # than if you use the typical `while True`
     for frame in manager_cv2:
-        cv2.imshow('Example easy manager', frame)
+        if manager_cv2.key_manager.flip:
+            frame = cv2.flip(frame,1)
+
+        if manager_cv2.key_manager.cartoon:
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            gray = cv2.medianBlur(gray, 5)
+            edges = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 9, 5)
+            color = cv2.bilateralFilter(frame, 9, 300, 300)
+            frame = cv2.bitwise_and(color, color, mask=edges)
+
+        cv2.imshow("Frame", frame)
 
     cv2.destroyAllWindows()
-
-    # You can check easily your frame rate at any time (you don't need to wait
-    # unitl the for ends)
-    print('FPS: {}'.format(manager_cv2.get_fps()))
 
 
 if __name__ == '__main__':
@@ -48,4 +48,4 @@ if __name__ == '__main__':
     if type(args.video) is str and args.video.isdigit():
         args.video = int(args.video)
 
-    simple_manager(args.video, args.stream, args.fps)
+    key_manager(args.video, args.stream, args.fps)
