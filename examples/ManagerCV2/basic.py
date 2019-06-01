@@ -19,11 +19,12 @@ def simple_manager(video, stream, fps):
     # want to show it at real time)
     manager_cv2 = ManagerCV2(cv2.VideoCapture(video), is_stream=stream, fps_limit=fps)
 
-    # I decide that that I want to add two keystrokes
-    # `esc` for exiting and `q` only for giving some information
-    # For now it is not that easy to pass dynamic arguments (becouse you need to specify
+    # I decide that I want to add two keystrokes `esc` for exiting
+    # and `f` to print our current FPS
+    # For now it is not that easy to pass dynamic arguments (because you need to specify
     # at first, so if you want to pass a dynamic one, you probably will need to pass an
-    # object that you will modify)
+    # object that you will modify).
+    # NOTE: As you see in this example it is possible
     manager_cv2.add_keystroke(27, 1, print, 'Pressed esc. Exiting', exit=True)
     manager_cv2.add_keystroke(ord('f'), 1, print_fps, manager_cv2)
 
