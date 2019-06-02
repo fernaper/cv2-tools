@@ -72,7 +72,7 @@ def simple_selector(video, stream, fps):
         # The best way to make it works is creating the selection inside the loop
         # You can specify lot of optional parameters like:
         # alpha, color, polygon_color, normalized, thickness, filled, peephole, closed_polygon and show_vertexes
-        # Check documentation for more information of eachone
+        # Check documentation for more information of each one
         selector = SelectorCV2(color=(0,0,200), filled=True)
 
         # You can add multiple zones to a selector
