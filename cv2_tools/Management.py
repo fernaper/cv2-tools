@@ -163,8 +163,6 @@ class ManagerCV2():
         if self.stopped:
             self.end_iteration()
 
-        if self.queue.empty():
-            print('Empty')
         frame, frame_hash = self.queue.get()
 
         # This is how it comunicates with the thread (to indicate it takes something)
