@@ -4,6 +4,17 @@ import numpy as np
 import time
 import cv2
 
+try:
+    from PIL import Image
+except ModuleNotFoundError as e:
+    pass
+
+try:
+    # It is usefull if you want to detect scene changes
+    import imagehash
+except ModuleNotFoundError as e:
+    pass
+
 from queue import Queue
 from threading import Thread
 
@@ -71,7 +82,7 @@ class ManagerCV2():
                 setattr(self, arg, not value)
 
 
-    def __init__(self, video, is_stream=False, fps_limit=0, queue_size=256):
+    def __init__(self, video, is_stream=False, fps_limit=0, queue_size=256, detect_scenes=False):
         """  ManagerCV2 constructor.
 
         Arguments:
@@ -114,9 +125,16 @@ class ManagerCV2():
         self.ret_handler_args = ()
         self.ret_handler_kwargs = {}
 
+        # Additional features
         self.initial_time = None
         self.final_time = None
         self.count_frames = 0
+
+        # Scene detection
+        self.detect_scenes = detect_scenes
+        self.new_scene = False
+        self.previous_frame_hash = None
+        self.hash_distance = 25
 
 
     def __iter__(self):
@@ -152,6 +170,16 @@ class ManagerCV2():
         if type(frame) == type(None):
             self.end_iteration()
 
+        # If we must detect scenes it will help us
+        if self.detect_scenes:
+            new_hash = ManagerCV2._generate_hash(frame)
+            if not self.previous_frame_hash:
+                self.new_scene = True
+            else:
+                self.new_scene = (new_hash - self.previous_frame_hash > self.hash_distance)
+
+            self.previous_frame_hash = new_hash
+
         self.final_time = time.time()
         self.count_frames += 1
 
@@ -174,6 +202,22 @@ class ManagerCV2():
 
             self.last_frame_time = time.time()
         return frame
+
+
+    @staticmethod
+    def _generate_hash(frame):
+        return imagehash.dhash(Image.fromarray(frame))
+
+
+    def _is_new_scene(old_hash, new_hash):
+        if not old_hash:
+            old_hash = new_hash
+            c = True
+        else:
+            d = new_hash - old_hash
+            if d > config.CT_DIS_PHASH:
+                old_hash = new_hash
+                c = True
 
 
     def fill_queue(self):
@@ -205,7 +249,7 @@ class ManagerCV2():
 
 
     def stop_queue(self):
-        self.stop_queue = True
+        self.stopped = True
         self.queue.put(None)
 
 
