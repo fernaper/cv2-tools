@@ -22,7 +22,7 @@ from threading import Thread
 class ManagerCV2():
     """ ManagerCV2 helps to manage videos and streams
 
-    With this Class you are capable to iterete a video frame by frame (if you want,
+    With this Class you are capable to iterate a video frame by frame (if you want,
     you can also limit the FPS).
     Also you can add keystrokes with your own callbacks methods in a easiest way.
     At the same time you can ask to this manager the index of the current frame
@@ -97,7 +97,10 @@ class ManagerCV2():
                  `ManagerCV2._tries_reconnect_stream` indicates. (Default: False)
         fps_limit -- You can set with it the maximum FPS of the video. If you
                      set it to 0, it means no limit. (Default: 0)
-        queue_size -- The maximum number of frames to store in the queue. (Default: 256)
+        queue_size -- The maximum number of frames to store in the queue (for multiprocessing). (Default: 256)
+        detect_scenes -- Bool to indicate if you want to detect changes of scenes,
+                         it will have an small impact on the frame rate. Almost 0
+                         if it is a video and you set fps_limit < 60. (Default: False)
         """
         # Video/Stream managment attributes
         self.video = video
@@ -160,6 +163,8 @@ class ManagerCV2():
         if self.stopped:
             self.end_iteration()
 
+        if self.queue.empty():
+            print('Empty')
         frame, frame_hash = self.queue.get()
 
         # This is how it comunicates with the thread (to indicate it takes something)
@@ -203,22 +208,6 @@ class ManagerCV2():
         return frame
 
 
-    @staticmethod
-    def _generate_hash(frame):
-        return imagehash.dhash(Image.fromarray(frame))
-
-
-    def _is_new_scene(old_hash, new_hash):
-        if not old_hash:
-            old_hash = new_hash
-            c = True
-        else:
-            d = new_hash - old_hash
-            if d > config.CT_DIS_PHASH:
-                old_hash = new_hash
-                c = True
-
-
     def fill_queue(self):
         # keep looping infinitely
         while True:
@@ -243,7 +232,7 @@ class ManagerCV2():
 
                 frame_hash = None
                 if self.detect_scenes:
-                    frame_hash = ManagerCV2._generate_hash(frame)
+                    frame_hash = imagehash.dhash(Image.fromarray(frame))
                 self.queue.put((frame,frame_hash))
             else:
                 # I want to wait until someone awake me
