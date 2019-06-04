@@ -160,25 +160,24 @@ class ManagerCV2():
         if self.stopped:
             self.end_iteration()
 
-        frame = self.queue.get()
+        frame, frame_hash = self.queue.get()
 
         # This is how it comunicates with the thread (to indicate it takes something)
         if not self.queue_awake.full():
             self.queue_awake.put(None)
 
         # If we get a frame but it is None, it means that we finished the queue
-        if type(frame) == type(None):
+        if frame is None:
             self.end_iteration()
 
         # If we must detect scenes it will help us
         if self.detect_scenes:
-            new_hash = ManagerCV2._generate_hash(frame)
             if not self.previous_frame_hash:
                 self.new_scene = True
             else:
-                self.new_scene = (new_hash - self.previous_frame_hash > self.hash_distance)
+                self.new_scene = (frame_hash - self.previous_frame_hash > self.hash_distance)
 
-            self.previous_frame_hash = new_hash
+            self.previous_frame_hash = frame_hash
 
         self.final_time = time.time()
         self.count_frames += 1
@@ -242,7 +241,10 @@ class ManagerCV2():
                     self.stop_queue()
                     return
 
-                self.queue.put(frame)
+                frame_hash = None
+                if self.detect_scenes:
+                    frame_hash = ManagerCV2._generate_hash(frame)
+                self.queue.put((frame,frame_hash))
             else:
                 # I want to wait until someone awake me
                 self.queue_awake.get()
@@ -250,7 +252,7 @@ class ManagerCV2():
 
     def stop_queue(self):
         self.stopped = True
-        self.queue.put(None)
+        self.queue.put((None,None))
 
 
     def set_ret_handler(self, method, *args, **kwargs):
