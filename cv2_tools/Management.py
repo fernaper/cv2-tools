@@ -15,6 +15,13 @@ try:
 except ModuleNotFoundError as e:
     pass
 
+try:
+    # It is usefull if you want to track objects
+    import dlib
+except ModuleNotFoundError as e:
+    pass
+
+
 from queue import Queue
 from threading import Thread
 
@@ -144,6 +151,10 @@ class ManagerCV2():
         self.previous_frame_hash = None
         self.hash_distance = 25
 
+        # Tracking algorithm
+        self.selector_tracker = None
+        self.trackers = []
+
 
     def __iter__(self):
         self.initial_time = time.time()
@@ -252,6 +263,41 @@ class ManagerCV2():
     def stop_queue(self):
         self.stopped = True
         self.queue.put((None,None))
+
+
+    def set_tracking(self, selector, frame):
+        self.selector_tracker = selector
+        self.trackers = []
+
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        height, width, _ = rgb_frame.shape
+
+        for selection in self.selector_tracker.zones:
+            if self.selector_tracker.normalized:
+                selection = (int(selection[0]*width),
+                             int(selection[1]*height),
+                             int(selection[2]*width),
+                             int(selection[3]*height))
+            tracker = dlib.correlation_tracker()
+            tracker.start_track(rgb_frame, dlib.rectangle(*selection))
+            self.trackers.append(tracker)
+
+
+    def get_tracking(self, frame):
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        height, width, _ = rgb_frame.shape
+
+        for i, tracker in enumerate(self.trackers):
+            tracker.update(rgb_frame)
+            pos = tracker.get_position()
+            selection = (int(pos.left()),int(pos.top()), int(pos.right()), int(pos.bottom()))
+            if self.selector_tracker.normalized:
+                selection = (selection[0]/width,
+                             selection[1]/height,
+                             selection[2]/width,
+                             selection[3]/height)
+            self.selector_tracker.zones[i] = selection
+        return self.selector_tracker
 
 
     def set_ret_handler(self, method, *args, **kwargs):

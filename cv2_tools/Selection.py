@@ -137,6 +137,8 @@ class SelectorCV2():
                 }
                 Note: You can't specify some attributes as: normalized or closed_polygon (we are considering add some of them)
         """
+        if not self.normalized:
+            zone = [int(x) for x in zone]
         self.zones.append(zone)
         if tags and type(tags) is not list:
             tags = [tags]
