@@ -82,7 +82,7 @@ class ManagerCV2():
                 setattr(self, arg, not value)
 
 
-    def __init__(self, video, is_stream=False, fps_limit=0, queue_size=256, detect_scenes=False):
+    def __init__(self, video, is_stream=False, fps_limit=0, queue_size=256, detect_scenes=False, show_video=False):
         """  ManagerCV2 constructor.
 
         Arguments:
@@ -101,12 +101,17 @@ class ManagerCV2():
         detect_scenes -- Bool to indicate if you want to detect changes of scenes,
                          it will have an small impact on the frame rate. Almost 0
                          if it is a video and you set fps_limit < 60. (Default: False)
+        show_video -- Bool to indicate if you want to show the video (with cv2.imshow).
+                      If you use the method `add_keystroke` you don't need to use this param
+                      (its fine if you still want to put it to True).
+                      Also, if you doesn't want to show the video, let it a False. (Default: False)
         """
         # Video/Stream managment attributes
         self.video = video
         self.is_stream = is_stream
         self.stream = video
         self.fps_limit = fps_limit
+        self.show_video = show_video
         self.queue_size = queue_size
         self.stopped = False
         self.queue = None
@@ -195,6 +200,13 @@ class ManagerCV2():
                 self.key_manager.execute_management(*self.__keystroke_dict['keystroke_args'][index])
                 if self.last_keystroke in self.__keystroke_dict['exit_keystrokes']:
                     self.end_iteration()
+
+        # If we doesn't add a keystroke we should at least wait a minimum in order to
+        # be capable to reproduce the video with cv2.imshow (if you indicated that you want
+        # tho display the video)
+        # Also, you can wait by yourself (without using Management)
+        if self.show_video and not self.__keystroke_dict['wait_key']:
+            cv2.waitKey(1)
 
         # Here we limit the speed (if we want constant frames)
         if self.fps_limit:
