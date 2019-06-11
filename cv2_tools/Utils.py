@@ -576,7 +576,7 @@ def select_zone(frame, position, tags=[], tag_position=None, alpha=0.9, color=(1
 
 def select_multiple_zones(frame, all_selected_zones, all_tags=None, alpha=0.9, color=(110,70,45),
                 normalized=False, thickness=2, filled=False, peephole=True, margin=5,
-                specific_properties={}):
+                color_by_tag={}, specific_properties={}):
     """Draw better rectangles to select multiple zones at the same time.
     It will put tags to the rectangles as better as possible, avoiding (if it is possible) overwritten information.
 
@@ -600,6 +600,8 @@ def select_multiple_zones(frame, all_selected_zones, all_tags=None, alpha=0.9, c
     filled -- boolean parameter, if True, will draw a filled rectangle with one-third opacity compared to the rectangle (default False)
     peephole -- boolean parameter, if True, also draw additional effect, so it looks like a peephole
     margin -- extra margin in pixels to be separeted with the selected zone (default 5)
+    color_by_tag -- dict from string to color (BGR). The string is the first tag of a selection.
+                    So, if you want to draw a class with a color, you can easily do it. (default {})
 
     Return:
     A new drawed Frame
@@ -646,8 +648,11 @@ def select_multiple_zones(frame, all_selected_zones, all_tags=None, alpha=0.9, c
             frame = select_zone_dict(frame,zone, tags=tags,tag_position=position,
                     normalized=normalized,margin=margin, other_parameters=specific_properties[i])
         else:
+            final_color = color
+            if tags[0] in color_by_tag:
+                final_color = color_by_tag[tags[0]]
             frame = select_zone(frame, zone, tags=tags, tag_position=position,
-                    alpha=alpha, color=color, thickness=thickness, filled=filled,
+                    alpha=alpha, color=final_color, thickness=thickness, filled=filled,
                     peephole=peephole, margin=margin)
     return frame
 
