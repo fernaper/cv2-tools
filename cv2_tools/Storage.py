@@ -65,6 +65,7 @@ class StorageCV2():
         'default_parameters': {
             'alpha': alpha,
             'color': color,
+            'color_by_tag':{},
             'filled': filled,
             'peephole': peephole,
             'normalized': normalized,
@@ -168,6 +169,7 @@ class StorageCV2():
             'default_parameters': {
                 'alpha': selector.alpha,
                 'color': selector.color,
+                'color_by_tag': selector.color_by_tag,
                 'filled': selector.filled,
                 'peephole': selector.peephole,
                 'normalized': selector.normalized,

@@ -19,7 +19,7 @@ class SelectorCV2():
     """
 
 
-    def __init__(self, alpha=0.9, color=(110,70,45), polygon_color=(110,45,93), normalized=False,
+    def __init__(self, alpha=0.9, color=(110,70,45), polygon_color=(110,45,93), color_by_tag={}, normalized=False,
                  thickness=2, filled=False, peephole=True, margin=5, closed_polygon=False,
                  show_vertexes=False):
         """  SelectorCV2 constructor.
@@ -30,6 +30,8 @@ class SelectorCV2():
         color -- color of the selected zones, touple with 3 elements BGR (default (110,70,45) -> dark blue)
                  BGR = Blue - Green - Red
         polygon_color -- color of the polygons, same structure as color
+        color_by_tag -- dict from string to color (BGR). The string is the first tag of a selection.
+                        So, if you want to draw a class with a color, you can easily do it. (default {})
         normalized -- boolean parameter, if True, position provided normalized (between 0 and 1)
                       else you should provide concrete values (default False)
         thickness -- thickness of the drawing in pixels (default 2)
@@ -48,6 +50,7 @@ class SelectorCV2():
         self.alpha = alpha
         self.color = color
         self.polygon_color = polygon_color
+        self.color_by_tag = color_by_tag
         self.normalized = normalized
         self.thickness = thickness
         self.filled = filled
@@ -65,7 +68,7 @@ class SelectorCV2():
         self.specific_properties = {}
 
 
-    def set_properties(self, alpha=None, color=None, polygon_color=None,
+    def set_properties(self, alpha=None, color=None, polygon_color=None, color_by_tag=None,
                        normalized=None, thickness=None, filled=None, peephole=None,
                        margin=None, closed_polygon=None, show_vertexes=None):
         """  Set default properties.
@@ -80,6 +83,8 @@ class SelectorCV2():
         color -- color of the selected zones, touple with 3 elements BGR (default None)
                  BGR = Blue - Green - Red
         polygon_color -- color of the polygons, same structure as color
+        color_by_tag -- dict from string to color (BGR). The string is the first tag of a selection.
+                        So, if you want to draw a class with a color, you can easily do it. (default {})
         normalized -- boolean parameter, if True, position provided normalized (between 0 and 1) (default None)
                       else you should provide concrete values (default None)
         thickness -- thickness of the drawing in pixels (default None)
@@ -94,6 +99,8 @@ class SelectorCV2():
             self.color = color
         if polygon_color is not None:
             self.polygon_color = polygon_color
+        if color_by_tag is not None:
+            self.color_by_tag = color_by_tag
         if normalized is not None:
             self.normalized = normalized
         if thickness is not None:
@@ -313,6 +320,7 @@ class SelectorCV2():
             filled=self.filled,
             peephole=self.peephole,
             margin=self.margin,
+            color_by_tag=self.color_by_tag,
             specific_properties=self.specific_properties)
 
         # Step 3: Draw free tags
