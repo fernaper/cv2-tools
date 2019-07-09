@@ -17,7 +17,9 @@ setuptools.setup(
     install_requires=[
         #'opencv-python',
         'numpy',
-        'python-constraint'
+        'python-constraint',
+        'PIL',
+        'imagehash'
     ],
     classifiers=[
         'Programming Language :: Python :: 3',
