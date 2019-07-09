@@ -120,6 +120,7 @@ class ManagerCV2():
         self.fps_limit = fps_limit
         self.show_video = show_video
         self.queue_size = queue_size
+        self.stream_error = False
         self.stopped = False
         self.queue = None
         self.queue_thread = None
@@ -237,6 +238,10 @@ class ManagerCV2():
                 return
             if not self.queue.full():
                 ret, frame = self.video.read()
+                # In case of streaming it means that we could lose some frames
+                # so this variable is usefull to check it
+                self.stream_error = bool(ret)
+
                 # If it is a streaming we will try to reconnect
                 if self.is_stream and not ret:
                     exit = False
@@ -345,3 +350,8 @@ class ManagerCV2():
     def get_fps(self):
         """ Get average FPS"""
         return round(self.count_frames / (self.final_time - self.initial_time),3)
+
+
+    def is_error_last_frame(self):
+        """ If we lose the last frame it will return True eoc False (only usefull for streams)"""
+        return self.stream_error
