@@ -265,7 +265,7 @@ def add_tags(frame, position, tags, tag_position=None, alpha=0.75, color=(20, 20
     overlay = frame.copy()
     for i, tag in enumerate(tags):
         reverse_i = len(tags) - i
-        extra_adjustment = 2 if tag[-1] == '\n' else 1
+        extra_adjustment = 2 if len(tag) > 1 and tag[-1] == '\n' else 1
         if tag_position == 'top':
             cv2.rectangle(overlay, (position.x1 + margin, position.y1 - (margin + text_height)*reverse_i - margin * (reverse_i-1) - text_height - margin * (extra_adjustment - 1 )),
                           (position.x1 + text_width + margin*3, position.y1 - (margin + text_height)*reverse_i - margin * (reverse_i) + text_height), color,-1)
@@ -649,7 +649,7 @@ def select_multiple_zones(frame, all_selected_zones, all_tags=None, alpha=0.9, c
                     normalized=normalized,margin=margin, other_parameters=specific_properties[i])
         else:
             final_color = color
-            if tags[0] in color_by_tag:
+            if tags and tags[0] in color_by_tag:
                 final_color = color_by_tag[tags[0]]
             frame = select_zone(frame, zone, tags=tags, tag_position=position,
                     alpha=alpha, color=final_color, thickness=thickness, filled=filled,
