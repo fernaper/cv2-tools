@@ -1,7 +1,7 @@
 pipeline {
     environment {
         // This registry is important for removing the image after the tests
-        registry = "cv2tools"
+        registry = "fernaperg/cv2tools"
     }
     agent any
     stages {
@@ -9,7 +9,7 @@ pipeline {
             steps {
                 script {
                     // Building the Docker image
-                    dockerImage = docker.build registry + ":$BUILD_NUMBER"
+                    dockerImage = docker.build( "--no-cache", registry + ":$BUILD_NUMBER")
 
                     try {
                         dockerImage.inside() {
