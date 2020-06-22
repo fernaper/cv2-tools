@@ -4,6 +4,8 @@
 *.png
 *.mp4
 
+!test/media/*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
