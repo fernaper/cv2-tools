@@ -1,0 +1,16 @@
+.gitignore
+.github/
+.vscode/
+
+examples/
+build/
+dist/
+cv2_tools.egg-info/
+__pycache__
+*.step
+Dockerfile
+LICENSE
+CODE_OF_CONDUCT.md
+
+*.txt
+!requirements.txt
