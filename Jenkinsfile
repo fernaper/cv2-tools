@@ -1,7 +1,7 @@
 pipeline {
     environment {
         // This registry is important for removing the image after the tests
-        registry = "fernaperg/cv2tools"
+        registry = "cv2tools"
     }
     agent any
     stages {
