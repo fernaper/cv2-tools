@@ -13,4 +13,4 @@ COPY . ./
 
 RUN pip install -U .
 
-ENTRYPOINT [ "python" ]
+#ENTRYPOINT [ "python" ]
