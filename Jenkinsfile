@@ -20,11 +20,11 @@ pipeline {
                             echo "PROJECTDIR directory is $PROJECTDIR"
                             echo "WORKSPACE directory is $WORKSPACE"
                             echo "Test folder: $WORKSPACE$PROJECTDIR/test"
-                            echo "cp -r '$PROJECTDIR' '$WORKSPACE'"
-                            sh "cp -r '$PROJECTDIR' '$WORKSPACE'"
+                            echo "cp -r '$PROJECTDIR/test' '$WORKSPACE'"
+                            sh "cp -r '$PROJECTDIR/test' '$WORKSPACE'"
 
                             // Running the tests inside the new directory
-                            dir("$WORKSPACE$PROJECTDIR/test") {
+                            dir("$WORKSPACE/test") {
                                 sh "python -m unittest"
                             }
                         }
