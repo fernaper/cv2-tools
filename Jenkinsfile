@@ -17,8 +17,11 @@ pipeline {
                             def PROJECTDIR = sh(script: 'echo \$PROJECTDIR', returnStdout: true).trim()
 
                             // Copying the project into our workspace
+                            echo "PROJECTDIR directory is $PROJECTDIR"
+                            echo "WORKSPACE directory is $WORKSPACE"
                             sh "cp -r '$PROJECTDIR' '$WORKSPACE'"
 
+                            echo "Test folder: $WORKSPACE$PROJECTDIR/test"
                             // Running the tests inside the new directory
                             dir("$WORKSPACE$PROJECTDIR/test") {
                                 sh "python -m unittest"
