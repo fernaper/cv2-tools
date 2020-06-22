@@ -21,7 +21,7 @@ pipeline {
 
                             // Running the tests inside the new directory
                             dir("$WORKSPACE/test") {
-                                sh "python -m unittest"
+                                sh "-m unittest discover"
                             }
                         }
 

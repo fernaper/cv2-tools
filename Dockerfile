@@ -12,3 +12,5 @@ WORKDIR $PROJECTDIR
 COPY . ./
 
 RUN pip install -U .
+
+ENTRYPOINT [ "python" ]
