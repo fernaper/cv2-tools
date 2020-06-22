@@ -177,10 +177,10 @@ class ManagerCV2():
 
     def __next__(self):
         # Get frame from queue if not stopped yet
-        if self.stopped:
+        if self.stopped and self.queue.qsize() == 0:
             self.end_iteration()
 
-        frame, frame_hash = self.queue.get()
+        frame, frame_hash = self.queue.get(block=True)
 
         # This is how it comunicates with the thread (to indicate it takes something)
         if not self.queue_awake.full():
@@ -260,6 +260,7 @@ class ManagerCV2():
                 if self.detect_scenes:
                     frame_hash = imagehash.dhash(Image.fromarray(frame))
                 self.queue.put((frame,frame_hash))
+                queue_size = self.queue.qsize()
             else:
                 # I want to wait until someone awake me
                 self.queue_awake.get()
