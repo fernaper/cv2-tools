@@ -17,7 +17,6 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-test/
 build/
 develop-eggs/
 dist/
@@ -112,3 +111,5 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+.vscode
