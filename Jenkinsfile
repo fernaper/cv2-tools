@@ -9,7 +9,7 @@ pipeline {
             steps {
                 script {
                     // Building the Docker image
-                    dockerImage = docker.build( "--no-cache", registry + ":$BUILD_NUMBER")
+                    dockerImage = docker.build registry + ":$BUILD_NUMBER"
 
                     try {
                         dockerImage.inside() {
