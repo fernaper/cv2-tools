@@ -22,23 +22,23 @@ def manage_keys(manager_cv2, selection):
         manager_cv2.key_manager.shrink = False
 
     if manager_cv2.key_manager.up:
-        y1 -= 0.1
-        y2 -= 0.1
+        y1 -= 0.02
+        y2 -= 0.02
         manager_cv2.key_manager.up = False
 
     if manager_cv2.key_manager.left:
-        x1 -= 0.1
-        x2 -= 0.1
+        x1 -= 0.02
+        x2 -= 0.02
         manager_cv2.key_manager.left = False
 
     if manager_cv2.key_manager.down:
-        y1 += 0.1
-        y2 += 0.1
+        y1 += 0.02
+        y2 += 0.02
         manager_cv2.key_manager.down = False
 
     if manager_cv2.key_manager.right:
-        x1 += 0.1
-        x2 += 0.1
+        x1 += 0.02
+        x2 += 0.02
         manager_cv2.key_manager.right = False
 
     return (x1,y1,x2,y2)
