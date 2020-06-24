@@ -156,7 +156,9 @@ def draw_free_tag(frame, coordinates, tags, alpha=0.75, color=(20,20,20),
 
 
 def add_tags(frame, position, tags, tag_position=None, alpha=0.75, color=(20, 20, 20),
-             font_info=(cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.75, (255,255,255), 1)):
+             font_info=(cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.75, (255,255,255), 1),
+             tags_order_priority=('top', 'inside', 'bottom_right', 'bottom_left'),
+             multitags_order_priority=('bottom_right', 'bottom_left', 'inside', 'top')):
     """Add tags to selected zone.
 
     It was originally intended as an auxiliary method to add details to the select_zone()
@@ -223,20 +225,36 @@ def add_tags(frame, position, tags, tag_position=None, alpha=0.75, color=(20, 20
             - If it doesn't fit, try to put the text On top of the rectangle
     '''
     if not tag_position:
-        fits_right = position.x2 + text_width + margin*3 <= f_width
-        fits_left = position.x1 - (text_width + margin*3) >= 0
-        fits_below = (text_height + margin)*len(tags) - margin <= position.y2 - thickness
-        fits_inside = position.x1 + text_width + margin*3 <= position.x2 - thickness and \
-                      position.y1 + (margin*2 + text_height)*len(tags) + text_height - margin <= position.y2 - thickness
+        extra_adjustment = 2 if len(tag) > 1 and tag[-1] == '\n' else 1
 
-        if fits_right and fits_below:
-            tag_position = 'bottom_right'
-        elif fits_left and fits_below:
-            tag_position = 'bottom_left'
-        elif fits_inside:
-            tag_position = 'inside'
-        else:
-            tag_position = 'top'
+        vertical_fit = position.y2 - (margin + text_height)*len(tags) - margin * (len(tags)-1) - text_height - margin * (extra_adjustment - 1) >= position.y1
+        horizontal_fit = text_width + margin*3 <= position.x2 - position.x1
+
+        fits_top = position.y1 - (margin + text_height)*len(tags) - margin * (len(tags)-1) - text_height - margin * (extra_adjustment - 1 ) >= 0 and horizontal_fit
+
+        fits_bottom_right = vertical_fit and position.x2 + text_width + margin*3 <= f_width
+
+        fits_bottom_left = vertical_fit and position.x1 - (text_width + margin*3) >= 0
+
+        bottom_inside = position.y1 + (margin*2 + text_height)*(len(tags) + 1) + margin*len(tags) + text_height - margin
+        fits_inside = bottom_inside <= position.y2 and bottom_inside <= f_height  and horizontal_fit
+
+        # The priority order is selected by parameter
+        tags_priority = tags_order_priority if len(tags) < 2 else multitags_order_priority
+
+        position_checker = {
+            'top': fits_top,
+            'bottom_right': fits_bottom_right,
+            'bottom_left': fits_bottom_left,
+            'inside': fits_inside
+        }
+
+        tag_position = tags_priority[0]
+        for tag_priority in tags_priority:
+            if position_checker[tag_priority]:
+                tag_position = tag_priority
+                break
+
     else:
         valid = ['bottom_right', 'bottom_left', 'inside', 'top']
         if tag_position not in ['bottom_right', 'bottom_left', 'inside', 'top']:
@@ -621,17 +639,19 @@ def select_multiple_zones(frame, all_selected_zones, all_tags=None, alpha=0.9, c
             all_tags_shapes.append(get_shape_tags(all_tags[i]))
         # Here you could pass the frame if you want to see where get_possible_positions
         # thinks the tags will be.           Just: frame=frame     \/
-        best_position = get_possible_positions(f_width, f_height, all_selected_zones,
-                        all_tags_shapes, margin=margin, frame=[])
+        best_position = None
+        #best_position = get_possible_positions(f_width, f_height, all_selected_zones,
+        #                all_tags_shapes, margin=margin, frame=[])
 
     for i, zone in enumerate(all_selected_zones):
         tags = None
         position = None
 
         # Im checking all of this stuff just in case
-        if all_tags and best_position and i < len(all_tags) and i < len(best_position):
+        if all_tags and i < len(all_tags):
+            if best_position and i < len(best_position):
+                position = best_position[i]
             tags = all_tags[i]
-            position = best_position[i]
 
         if i in specific_properties:
             if 'alpha' not in specific_properties[i]:
