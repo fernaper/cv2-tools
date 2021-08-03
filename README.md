@@ -1,6 +1,6 @@
 # cv2_tools
 
-[![Downloads](https://pepy.tech/badge/cv2-tools)](https://pypi.org/project/cv2-tools/) [![Downloads](https://pepy.tech/badge/cv2-tools/month)](https://pypi.org/project/cv2-tools/)
+[![PyPI version](https://badge.fury.io/py/cv2-tools.svg)](https://pypi.org/project/cv2-tools/)[![Downloads](https://pepy.tech/badge/cv2-tools)](https://pypi.org/project/cv2-tools/) [![Downloads](https://pepy.tech/badge/cv2-tools/month)](https://pypi.org/project/cv2-tools/)
 
 Library to help the drawing process with OpenCV. Thought to add labels to the images. Classification of images, etc.
 
